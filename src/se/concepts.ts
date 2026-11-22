@@ -1,0 +1,30 @@
+import type { Concept } from '../dbms/concepts';
+
+export const SE_CONCEPTS: Concept[] = [
+  { id: 'sdlc', module: 'SDLC, Agile, Scrum and Kanban', simple: 'How software projects are organised from idea to release.',
+    technical: 'The SDLC covers requirements, design, implementation, testing, deployment and maintenance. Waterfall does these sequentially; Agile iterates in short cycles with continuous feedback. Scrum uses fixed-length sprints, roles (Product Owner, Scrum Master, team), events (planning, daily scrum, review, retrospective) and artifacts (backlog, increment). Kanban visualises flow on a board and limits work in progress (WIP) to expose bottlenecks.',
+    analogy: 'Building a house in one go from a fixed blueprint (waterfall) versus furnishing one room at a time and asking the owner after each (agile).', realWorld: 'Most product teams use a Scrum/Kanban hybrid.',
+    keywords: [['Velocity', 'Story points a team completes per sprint.'], ['WIP limit', 'Maximum items allowed in a stage at once.'], ['Burndown', 'Remaining work over time.'], ['Lead time', 'Time from start of work to done.']],
+    pros: ['Early feedback', 'Adaptable to change'], cons: ['Needs discipline; scope can creep'], mistakes: ['Using velocity to compare teams.', 'Ignoring WIP limits.'], interview: ['Scrum vs Kanban?', 'What is a sprint retrospective for?'], related: ['Process Lab'] },
+  { id: 'req', module: 'Requirements Engineering and UML', simple: 'Find out what to build and draw it so everyone agrees.',
+    technical: 'Requirements are elicited (interviews, prototypes), analysed, specified (user stories with acceptance criteria) and validated. UML models structure and behaviour: use case diagrams (actors and goals), class diagrams (classes, associations, inheritance, composition), sequence diagrams (message order over time) and activity diagrams (workflow). Functional vs non-functional requirements both matter.',
+    analogy: 'An architect\'s drawings: floor plan (class diagram), walkthrough (sequence diagram).', realWorld: 'User stories in a backlog: "As a shopper I want to save my cart so that I can buy later."',
+    keywords: [['User story', 'Who, what, why in one sentence.'], ['Acceptance criteria', 'Testable conditions for "done".'], ['Association/aggregation/composition', 'Increasingly strong "has" relationships.']],
+    pros: ['Shared understanding', 'Fewer expensive late changes'], cons: ['Diagrams go stale'], mistakes: ['Vague, untestable requirements.'], interview: ['Aggregation vs composition?', 'Functional vs non-functional requirements?'], related: ['OOPS world'] },
+  { id: 'test', module: 'Testing and TDD', simple: 'Check that the software does what it should, automatically.',
+    technical: 'Unit tests verify one function/class in isolation; integration tests verify modules together; system tests verify the whole product; regression tests catch old bugs returning. The test pyramid recommends many fast unit tests, fewer integration tests and few end-to-end tests. Test-driven development repeats Red (write a failing test), Green (make it pass with the simplest code), Refactor (clean up). Mocks/stubs isolate dependencies.',
+    analogy: 'A safety net for refactoring: if the net holds, you may change the code boldly.', realWorld: 'CI runs thousands of tests on every commit.',
+    keywords: [['Mock', 'A fake dependency that records calls.'], ['Coverage', 'Fraction of code executed by tests (not a quality guarantee).'], ['Flaky test', 'Passes and fails without code changes.']],
+    pros: ['Confidence, documentation, safe refactoring'], cons: ['Maintenance cost'], mistakes: ['Testing implementation details; chasing 100% coverage.'], interview: ['What is the test pyramid?', 'Describe red-green-refactor.'], related: ['CI/CD'] },
+  { id: 'principles', module: 'SOLID, DRY, KISS, YAGNI, Refactoring, Code Review', simple: 'Habits that keep code easy to change.',
+    technical: 'SOLID: single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion. DRY: one authoritative representation of each piece of knowledge. KISS: prefer the simplest solution. YAGNI: do not build what you do not need yet. Refactoring changes structure without changing behaviour, protected by tests. Code review catches defects and spreads knowledge.',
+    analogy: 'Tidying a workshop so the next job starts quickly.', realWorld: 'The Strategy lab shows Open/Closed in action.', keywords: [['Code smell', 'A surface sign of a deeper design problem (long method, duplicated code, switch on type).'], ['Technical debt', 'Shortcuts that make future change costlier.']],
+    pros: ['Lower long-term cost'], cons: ['Over-engineering if applied dogmatically'], mistakes: ['DRY applied to coincidentally similar code.'], interview: ['Explain Open/Closed with an example.'], related: ['Pattern catalogue'] },
+  { id: 'cicd', module: 'CI/CD and Deployment Strategies', simple: 'Automatically build, test and release every change.',
+    technical: 'Continuous integration merges and verifies changes frequently (build, unit/integration tests, static analysis, security scans). Continuous delivery keeps the main branch always releasable; continuous deployment releases automatically. Deployment strategies limit risk: rolling (update instances gradually), blue-green (two environments, switch traffic, instant rollback) and canary (send a small percentage to the new version and watch error rates before widening).',
+    analogy: 'An assembly line with quality checks at each station; a failed check stops the line.', realWorld: 'GitHub Actions, GitLab CI, Jenkins.', keywords: [['Pipeline', 'Ordered automated stages.'], ['Rollback', 'Returning to the previous version.'], ['Feature flag', 'Switch to enable code without redeploying.']],
+    pros: ['Fast feedback, small safe releases'], cons: ['Pipeline maintenance, flaky tests slow everyone'], mistakes: ['Skipping tests to ship faster.'], interview: ['Blue-green vs canary?'], related: ['Process Lab: CI/CD'] },
+];
+
+import { SE_MORE } from '../extra/moreConcepts';
+SE_CONCEPTS.push(...SE_MORE);

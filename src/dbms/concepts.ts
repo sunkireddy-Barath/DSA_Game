@@ -1,0 +1,57 @@
+export interface Concept {
+  id: string; module: string; simple: string; technical: string; analogy: string; realWorld: string;
+  keywords: [string, string][]; pros: string[]; cons: string[]; mistakes: string[]; interview: string[]; related: string[];
+}
+
+export const DBMS_CONCEPTS: Concept[] = [
+  { id: 'fundamentals', module: 'DBMS Fundamentals', simple: 'A DBMS is software that stores data and lets many programs read and change it safely.',
+    technical: 'A database management system provides data definition, manipulation, concurrency control, recovery and security over a shared collection of persistent data, with a three-schema architecture (external, conceptual, internal) giving logical and physical data independence.',
+    analogy: 'A well-run library: shelves (storage), a catalogue (schema), librarians (query processor) and rules so two people do not tear the same book apart.',
+    realWorld: 'Banking ledgers, e-commerce catalogues, hospital records.', keywords: [['Schema', 'The structure/description of the data.'], ['Data independence', 'Changing storage or logical design without rewriting applications.'], ['DBA', 'The person responsible for design, security and performance.']],
+    pros: ['Less redundancy than flat files', 'Concurrent access and integrity', 'Recovery after crashes'], cons: ['Cost and complexity', 'Overhead for tiny problems'], mistakes: ['Treating a spreadsheet as a database for multi-user data.'], interview: ['File system vs DBMS?', 'Explain the three-schema architecture.'], related: ['Relational model', 'Transactions'] },
+  { id: 'models', module: 'Data Models and the Relational Model', simple: 'A data model is the way data and relationships are organised: tables, trees, graphs.',
+    technical: 'The relational model represents data as relations (tables) of tuples over attribute domains, identified by keys. The ER model describes entities, attributes and relationships (with cardinality and participation) before mapping to tables.',
+    analogy: 'ER diagram = architect\'s sketch; tables = the actual building plans.', realWorld: 'Almost every business application models customers, orders and products as related tables.',
+    keywords: [['Primary key', 'Minimal attributes uniquely identifying a row.'], ['Candidate key', 'Any minimal superkey.'], ['Foreign key', 'Attribute referencing another table\'s key (referential integrity).'], ['Cardinality', '1:1, 1:N or M:N relationship.'], ['Weak entity', 'Needs another entity\'s key to be identified.']],
+    pros: ['Simple, flexible, backed by theory', 'Declarative queries'], cons: ['Impedance mismatch with objects', 'Joins can be costly at scale'], mistakes: ['Using a natural key that can change.', 'Modelling M:N without a junction table.'], interview: ['Super key vs candidate key vs primary key?', 'How do you map an M:N relationship?'], related: ['Normalization', 'SQL'] },
+  { id: 'fd', module: 'Functional Dependencies', simple: 'X → Y means: if two rows agree on X they must agree on Y.',
+    technical: 'A functional dependency X → Y holds in a relation if every X value is associated with exactly one Y value. Armstrong\'s axioms (reflexivity, augmentation, transitivity) are sound and complete for deriving implied dependencies; the attribute closure X⁺ is the set of attributes determined by X.',
+    analogy: 'Roll number → student name: knowing the roll number tells you the name.', realWorld: 'Used to find keys and to detect redundancy before designing tables.',
+    keywords: [['Closure X⁺', 'All attributes determined by X.'], ['Trivial FD', 'Y ⊆ X.'], ['Partial dependency', 'A non-key attribute depends on part of a composite key.'], ['Transitive dependency', 'X → Y and Y → Z with Y not a key.']],
+    pros: ['Makes redundancy precise'], cons: ['Must be given by the designer, cannot be inferred from sample data alone'], mistakes: ['Inferring an FD from a few rows (data can only disprove an FD).'], interview: ['How do you find candidate keys?', 'What is a minimal cover?'], related: ['Normalization'] },
+  { id: 'norm', module: 'Normalization', simple: 'Split a table so each fact is stored once.',
+    technical: '1NF requires atomic values; 2NF removes partial dependencies; 3NF removes transitive dependencies of non-prime attributes; BCNF requires every determinant to be a superkey. Decompositions should be lossless-join and, ideally, dependency-preserving (BCNF can lose dependencies; 3NF synthesis always preserves them).',
+    analogy: 'Instead of writing the department head on every student card, keep one department card.', realWorld: 'OLTP systems are usually normalised to 3NF to avoid update anomalies; analytics warehouses deliberately denormalise.',
+    keywords: [['Update anomaly', 'Changing a repeated fact in one row leaves inconsistency.'], ['Insertion anomaly', 'A fact cannot be stored without unrelated data.'], ['Deletion anomaly', 'Deleting one fact accidentally destroys another.'], ['Lossless join', 'Joining the parts returns exactly the original rows.']],
+    pros: ['No redundancy anomalies', 'Smaller updates'], cons: ['More joins', 'Slower reads in some workloads'], mistakes: ['Normalising without checking the decomposition is lossless.'], interview: ['3NF vs BCNF?', 'When would you denormalise?'], related: ['Functional dependencies', 'Joins'] },
+  { id: 'tx', module: 'Transactions and ACID', simple: 'A transaction is a group of steps that must succeed or fail as one.',
+    technical: 'Atomicity (all or nothing), Consistency (integrity constraints preserved), Isolation (concurrent transactions behave as if serial) and Durability (committed data survives crashes) are provided via logging, locking/MVCC and recovery.',
+    analogy: 'A bank transfer: money leaves one account and arrives in the other, or neither happens.', realWorld: 'Payments, inventory updates, bookings.',
+    keywords: [['Commit', 'Make changes permanent.'], ['Rollback', 'Undo all changes of the transaction.'], ['Schedule', 'An interleaving of operations of several transactions.'], ['Serializable', 'Equivalent to some serial order.']],
+    pros: ['Correctness under failure and concurrency'], cons: ['Locking/logging overhead'], mistakes: ['Assuming auto-commit groups several statements.'], interview: ['Explain each ACID property with an example.', 'What is a dirty read?'], related: ['Concurrency control', 'Recovery'] },
+  { id: 'cc', module: 'Concurrency Control', simple: 'Rules that stop concurrent transactions from corrupting each other.',
+    technical: 'Two-phase locking (growing then shrinking phase) guarantees conflict serializability; strict 2PL holds exclusive locks until commit, avoiding cascading rollbacks. Timestamp ordering, optimistic validation and MVCC are alternatives. Deadlocks are detected via cycles in the wait-for graph or prevented with wait-die/wound-wait.',
+    analogy: 'Reserving a meeting room: you lock it, work, then release; two groups wanting each other\'s room deadlock.', realWorld: 'Every multi-user database; PostgreSQL and Oracle use MVCC.',
+    keywords: [['Shared (S) lock', 'Many readers allowed.'], ['Exclusive (X) lock', 'Single writer.'], ['2PL', 'No new lock after the first unlock.'], ['Wait-for graph', 'Edge T1→T2 if T1 waits for a lock held by T2; a cycle means deadlock.']],
+    pros: ['Isolation'], cons: ['Blocking, deadlocks'], mistakes: ['Acquiring locks in inconsistent order.'], interview: ['How do you detect and resolve deadlock?', '2PL vs strict 2PL?'], related: ['Transactions'] },
+  { id: 'index', module: 'Storage and Indexing', simple: 'An index is a sorted shortcut that finds rows without reading the whole table.',
+    technical: 'Data lives in fixed-size pages. A B+ tree index keeps keys sorted in a balanced tree whose leaves are linked, so lookups cost O(log_f n) page reads and range scans follow leaf links. Clustered indexes define the physical row order; non-clustered indexes point to rows.',
+    analogy: 'A book index: look up a word, jump to the page.', realWorld: 'Primary keys, foreign keys and frequently filtered columns.',
+    keywords: [['Fan-out', 'Keys per node; high fan-out gives a very shallow tree.'], ['Clustered', 'Rows stored in index order.'], ['Selectivity', 'Fraction of rows matching a predicate.']],
+    pros: ['Fast lookups and range scans'], cons: ['Slower writes, extra space'], mistakes: ['Indexing every column; indexing low-selectivity columns.'], interview: ['Why B+ trees instead of binary trees?', 'Clustered vs non-clustered?'], related: ['Query processing'] },
+  { id: 'qp', module: 'Query Processing', simple: 'The database turns your SQL into a plan and chooses the cheapest way to run it.',
+    technical: 'Parsing and validation produce a logical plan; the optimizer enumerates physical plans (access paths, join order and algorithms such as nested-loop, hash and sort-merge join) and picks the one with the lowest estimated cost using statistics.',
+    analogy: 'A GPS comparing routes before you drive.', realWorld: 'EXPLAIN output in PostgreSQL/MySQL/SQLite.', keywords: [['Cost model', 'Estimates of I/O and CPU.'], ['Join order', 'The order tables are joined; affects cost enormously.']],
+    pros: ['Declarative SQL with automatic tuning'], cons: ['Stale statistics cause bad plans'], mistakes: ['Assuming the optimizer will fix a missing index.'], interview: ['Nested loop vs hash join?'], related: ['SQL world: EXPLAIN'] },
+  { id: 'recovery', module: 'Recovery', simple: 'After a crash the database uses its log to undo unfinished work and redo finished work.',
+    technical: 'Write-ahead logging requires log records to reach stable storage before the data pages they describe. Recovery (e.g. ARIES) analyses the log, REDOes committed changes missing on disk and UNDOes changes of uncommitted transactions; checkpoints bound how much log must be scanned.',
+    analogy: 'A diary written before every action lets you reconstruct what really happened.', realWorld: 'Every durable database.', keywords: [['WAL', 'Log first, data later.'], ['Checkpoint', 'A point from which recovery can start.'], ['Undo / Redo', 'Reverse or replay logged changes.']],
+    pros: ['Durability and atomicity'], cons: ['Log I/O cost'], mistakes: ['Disabling fsync for speed and losing committed data.'], interview: ['Explain write-ahead logging.'], related: ['Transactions'] },
+  { id: 'dist', module: 'Distributed Databases', simple: 'Data is copied or split across machines for scale and availability.',
+    technical: 'Replication keeps copies for availability and read scaling; sharding partitions data across nodes. The CAP theorem says that during a network partition a system must choose between consistency and availability. Two-phase commit coordinates atomic commit across nodes but can block on coordinator failure.',
+    analogy: 'Branch banks: each branch has part of the records, and transfers between branches need agreement.', realWorld: 'Large-scale web services.', keywords: [['Sharding', 'Splitting data by key across nodes.'], ['Eventual consistency', 'Replicas converge if updates stop.'], ['2PC', 'Prepare, then commit/abort on all participants.']],
+    pros: ['Scale-out, fault tolerance'], cons: ['Complexity, consistency trade-offs'], mistakes: ['Assuming CAP means you can only ever have two of three at all times.'], interview: ['Explain CAP.', 'How does 2PC work and when does it block?'], related: ['System design'] },
+];
+
+import { DBMS_MORE } from '../extra/moreConcepts';
+DBMS_CONCEPTS.push(...DBMS_MORE);
