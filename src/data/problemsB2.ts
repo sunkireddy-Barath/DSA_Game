@@ -881,8 +881,8 @@ vector<string> addOperators(string num, int target) {
 
   // ---------- Step 8: bit manipulation ----------
   mk('Introduction to Bit Manipulation', 'bitTour', 'Return {a & b, a | b, a ^ b, ~a, a << 1, a >> 1}.', 'vector<int> bitTour(int a, int b)', 'return {};', [
-    ap('Bitwise operators', 'O(1)', 'O(1)', '1', 'Each operator is a single CPU instruction acting on all 32 bits in parallel.', `vector<int> bitTour(int a, int b) {
-    return {a & b, a | b, a ^ b, ~a, a << 1, a >> 1};
+    ap('Bitwise operators', 'O(1)', 'O(1)', '1', 'Each operator is a single CPU instruction acting on all 32 bits in parallel. (a << 1 is done on the unsigned value because left-shifting a negative int is undefined behaviour before C++20.)', `vector<int> bitTour(int a, int b) {
+    return {a & b, a | b, a ^ b, ~a, (int)((unsigned int)a << 1), a >> 1};
 }`)], [[12, 10], [5, 3], [0, 7], [-8, 3], [1, 1]], (a: number, b: number) => [a & b, a | b, a ^ b, ~a, a << 1, a >> 1], ['Write both numbers in binary and combine bit by bit.'], 'AND keeps common bits, OR merges, XOR keeps differing bits, shifts move bits.'),
   mk('Check if the i-th bit is set or not', 'isBitSet', 'Return true if the i-th bit (0 = least significant) of n is 1.', 'bool isBitSet(int n, int i)', 'return false;', [
     ap('Shift and mask', 'O(1)', 'O(1)', '1', 'One shift and one AND.', `bool isBitSet(int n, int i) {

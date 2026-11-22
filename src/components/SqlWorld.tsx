@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Editor from '@monaco-editor/react';
+import Editor from './CodeEditor';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import type { SqlJsStatic } from 'sql.js';
 import { loadSql, SqlSession, RunOutcome, QResult, Stage } from '../sql/engine';

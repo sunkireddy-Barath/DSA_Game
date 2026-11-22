@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { GLOSSARY } from '../interview/glossary';
 import { InterviewQA } from './InterviewQA';
+import { SUBJECTS } from '../interview/qa';
 import { MockInterview } from './MockInterview';
 
 /** Searchable interview glossary with a self-test mode (term -> try to recall -> reveal). */
@@ -28,7 +29,7 @@ export function InterviewGlossary() {
       <p className="dim">{total} precise terms across {GLOSSARY.length} subjects: the exact definition, plus what interviewers usually probe. Use quiz mode to test yourself.</p>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', margin: '8px 0' }}>
         <button className={sub === 'all' ? 'btn' : 'btn ghost'} onClick={() => setSub('all')}>All</button>
-        {GLOSSARY.map(s => <button key={s.key} className={sub === s.key ? 'btn' : 'btn ghost'} onClick={() => setSub(s.key)}>{s.title.split(' ')[0]}</button>)}
+        {GLOSSARY.map(s => <button key={s.key} className={sub === s.key ? 'btn' : 'btn ghost'} onClick={() => setSub(s.key)}>{SUBJECTS[s.key] ?? s.title}</button>)}
         <input placeholder="Search a term, e.g. deadlock, B+ tree, CIDR…" value={q} onChange={e => setQ(e.target.value)} style={{ flex: 1, minWidth: 200 }} aria-label="Search glossary" />
         <label><input type="checkbox" checked={quiz} onChange={e => { setQuiz(e.target.checked); setShown({}); }} /> Quiz mode</label>
       </div>

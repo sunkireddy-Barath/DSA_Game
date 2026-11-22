@@ -1,3 +1,47 @@
-node_modules
-dist
-zca
+# dependencies and build output
+node_modules/
+dist/
+coverage/
+
+# secrets and local configuration: never commit these
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+.claude/settings.local.json
+
+# python backend
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# local databases (user accounts and progress live here)
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+
+# generated verification artifacts (re-create with `npm run verify:native`)
+tools/native/cases.json
+tools/native/results.json
+tools/native/report.txt
+tools/native/*.log
+
+# test output
+playwright-report/
+test-results/
+e2e/.auth/
+
+# editor, OS and scratch files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+scratch*

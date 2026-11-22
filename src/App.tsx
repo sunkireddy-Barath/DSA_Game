@@ -1,22 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
-import { PlaybookPanel } from './components/PlaybookPanel';
-import { InterviewGlossary } from './components/InterviewGlossary';
-import { SHEET, ALL_PROBLEMS, PROBLEM_BY_ID } from './data/sheet';
-import { PLAYABLE, PLAYABLE_BY_TITLE, Playable } from './data/problems';
+import { Component, ComponentType, lazy, LazyExoticComponent, ReactNode, Suspense, useEffect, useState } from 'react';
 import { SUBJECTS } from './data/subjects';
 import { levelOf, rankOf, RANKS, useStore } from './store';
-import { Workspace } from './components/Workspace';
-import { SqlWorld } from './components/SqlWorld';
-import { OSWorld } from './components/OSWorld';
-import { DBMSWorld } from './components/DBMSWorld';
-import { NetworkWorld } from './components/NetworkWorld';
-import { ArchWorld } from './components/ArchWorld';
-import { OopsWorld } from './components/OopsWorld';
-import { SystemDesignWorld } from './components/SystemDesignWorld';
-import { SoftwareEngWorld } from './components/SoftwareEngWorld';
-import { DevWorld } from './components/DevWorld';
-import { ConceptCards } from './components/ConceptCards';
-import { DSA_CONCEPTS } from './data/dsaConcepts';
+import { startAutoSync, useAuth } from './auth';
+import { api, ApiError } from './api';
+
+// Every page is its own chunk, loaded on demand. The Monaco editor itself is fetched only when a workspace opens.
+const page = <K extends string>(load: () => Promise<Record<K, any>>, key: K): LazyExoticComponent<ComponentType<any>> => lazy(() => load().then(m => ({ default: m[key] as ComponentType<any> })));
+const Dashboard = page(() => import('./pages/Home'), 'Dashboard');
+const Learn = page(() => import('./pages/Home'), 'Learn');
+const ProblemPage = page(() => import('./pages/ProblemRoute'), 'ProblemPage');
+const PlaygroundPage = page(() => import('./pages/ProblemRoute'), 'PlaygroundPage');
+const SqlWorld = page(() => import('./components/SqlWorld'), 'SqlWorld');
+const OSWorld = page(() => import('./components/OSWorld'), 'OSWorld');
+const DBMSWorld = page(() => import('./components/DBMSWorld'), 'DBMSWorld');
+const NetworkWorld = page(() => import('./components/NetworkWorld'), 'NetworkWorld');
+const ArchWorld = page(() => import('./components/ArchWorld'), 'ArchWorld');
+const OopsWorld = page(() => import('./components/OopsWorld'), 'OopsWorld');
+const SystemDesignWorld = page(() => import('./components/SystemDesignWorld'), 'SystemDesignWorld');
+const SoftwareEngWorld = page(() => import('./components/SoftwareEngWorld'), 'SoftwareEngWorld');
+const DevWorld = page(() => import('./components/DevWorld'), 'DevWorld');
+const InterviewGlossary = page(() => import('./components/InterviewGlossary'), 'InterviewGlossary');
+const Account = page(() => import('./components/Account'), 'Account');
 
 const useHash = () => {
   const [h, setH] = useState(location.hash.slice(1) || '/');
@@ -24,29 +28,25 @@ const useHash = () => {
   return h;
 };
 const go = (p: string) => { location.hash = p; };
-const PLAYABLE_COUNT = ALL_PROBLEMS.filter(p => PLAYABLE_BY_TITLE.has(p.title)).length;
-const playableIds = ALL_PROBLEMS.filter(p => PLAYABLE_BY_TITLE.has(p.title));
 
-const PLAYGROUND: Playable = {
-  title: 'Playground', fn: 'fib', statement: '', constraints: [], hints: [], intuition: '',
-  starter: '', tests: [], defaultArgs: [5], ref: () => 0,
-  approaches: [{ label: 'Your code', time: '—', space: '—', growth: 'n', why: 'Write any function in the supported subset and trace it.',
-    code: `class Solution {
-public:
-    int fib(int n) {
-        if (n <= 1) {
-            return n;
-        }
-        return fib(n - 1) + fib(n - 2);
-    }
-};` }],
-};
+class Boundary extends Component<{ children: ReactNode; resetKey: string }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidUpdate(prev: { resetKey: string }) { if (prev.resetKey !== this.props.resetKey && this.state.failed) this.setState({ failed: false }); }
+  render() {
+    return this.state.failed
+      ? <div className="page" role="alert"><h2>This page failed to load</h2><p>Check your connection and <button onClick={() => location.reload()}>reload</button>. If a new version was just deployed, reloading fetches it.</p></div>
+      : this.props.children;
+  }
+}
 
 export default function App() {
   const hash = useHash();
   const s = useStore();
+  const auth = useAuth();
   const [, route, arg] = hash.split('/');
   const lvl = levelOf(s.xp);
+  useEffect(() => { void useAuth.getState().init(); return startAutoSync(); }, []);
   return (
     <>
       <nav className="top">
@@ -61,83 +61,37 @@ export default function App() {
         <a className={route === 'playground' ? 'on' : ''} href="#/playground">Playground</a>
         <a className={route === 'profile' ? 'on' : ''} href="#/profile">Profile</a>
         <span className="spacer" />
+        <a className={route === 'account' ? 'on' : ''} href="#/account" data-testid="nav-account">{auth.status === 'authed' && auth.user ? `👤 ${auth.user.displayName}` : 'Sign in'}</a>
         <span className="hud">🔥 {s.streak.count}</span>
         <span className="hud">Lv {lvl} · {rankOf(s.xp)}</span>
         <span className="hud xp">{s.xp} XP</span>
       </nav>
       <main>
-        {!route && <Dashboard />}
-        {route === 'worlds' && <Worlds />}
-        {route === 'world' && <World k={arg} />}
-        {route === 'dsa' && <Learn />}
-        {route === 'p' && <ProblemPage id={arg} />}
-        {route === 'playground' && <Workspace key="pg" problem={PLAYGROUND} id="playground" diff="E" playground />}
-        {route === 'sql' && <SqlWorld />}
-        {route === 'os' && <OSWorld />}
-        {route === 'dbms' && <DBMSWorld />}
-        {route === 'cn' && <NetworkWorld />}
-        {route === 'coa' && <ArchWorld />}
-        {route === 'oops' && <OopsWorld />}
-        {route === 'sysdesign' && <SystemDesignWorld />}
-        {route === 'se' && <SoftwareEngWorld />}
-        {route === 'dev' && <DevWorld />}
-        {route === 'interview' && <InterviewGlossary />}
-        {route === 'profile' && <Profile />}
+        <Boundary resetKey={hash}>
+          <Suspense fallback={<div className="page dim" role="status">Loading…</div>}>
+            {!route && <Dashboard />}
+            {route === 'worlds' && <Worlds />}
+            {route === 'world' && <World k={arg} />}
+            {route === 'dsa' && <Learn />}
+            {route === 'p' && <ProblemPage id={arg} />}
+            {route === 'playground' && <PlaygroundPage />}
+            {route === 'sql' && <SqlWorld />}
+            {route === 'os' && <OSWorld />}
+            {route === 'dbms' && <DBMSWorld />}
+            {route === 'cn' && <NetworkWorld />}
+            {route === 'coa' && <ArchWorld />}
+            {route === 'oops' && <OopsWorld />}
+            {route === 'sysdesign' && <SystemDesignWorld />}
+            {route === 'se' && <SoftwareEngWorld />}
+            {route === 'dev' && <DevWorld />}
+            {route === 'interview' && <InterviewGlossary />}
+            {route === 'account' && <Account />}
+            {route === 'profile' && <Profile />}
+            {route && !['worlds', 'world', 'dsa', 'p', 'playground', 'sql', 'os', 'dbms', 'cn', 'coa', 'oops', 'sysdesign', 'se', 'dev', 'interview', 'account', 'profile'].includes(route) && <div className="page"><h1>Page not found</h1><p><a href="#/">Back to the dashboard</a></p></div>}
+          </Suspense>
+        </Boundary>
       </main>
     </>
-  );
-}
-
-function Bar({ v, max }: { v: number; max: number }) { return <div className="bar"><div style={{ width: `${max ? (v / max) * 100 : 0}%` }} /></div>; }
-
-function Dashboard() {
-  const s = useStore();
-  const solvedN = Object.keys(s.solved).length;
-  const next = playableIds.find(p => !s.solved[p.id]);
-  const daily = playableIds[Math.floor(Date.now() / 86400000) % playableIds.length];
-  const lvl = levelOf(s.xp);
-  const lastP = s.last && s.last !== 'playground' ? PROBLEM_BY_ID.get(s.last) : null;
-  const weak = Object.entries(s.attempts).filter(([id]) => !s.solved[id]).map(([id, n]) => ({ p: PROBLEM_BY_ID.get(id)!, n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 3);
-  return (
-    <div className="page">
-      <h1>Welcome back</h1>
-      <div className="stats">
-        <div className="card"><span>Problems solved</span><b>{solvedN}</b><i>of {PLAYABLE_COUNT} playable · {ALL_PROBLEMS.length} in sheet</i></div>
-        <div className="card"><span>Total XP</span><b>{s.xp}</b><Bar v={s.xp % 150} max={150} /><i>Level {lvl} · {rankOf(s.xp)}</i></div>
-        <div className="card"><span>Daily streak</span><b>{s.streak.count} 🔥</b><i>days in a row</i></div>
-        <div className="card"><span>Learning time</span><b>{(s.seconds / 3600).toFixed(1)} h</b><i>while a workspace is open</i></div>
-        <div className="card"><span>Prediction accuracy</span><b>{s.predictions.total ? Math.round((s.predictions.correct / s.predictions.total) * 100) : 0}%</b><i>{s.predictions.correct}/{s.predictions.total} correct</i></div>
-      </div>
-      <div className="grid2">
-        <div className="card">
-          <h3>Continue learning</h3>
-          {lastP ? <button className="primary" onClick={() => go(`/p/${lastP.id}`)}>Continue: {lastP.title}</button> : next && <button className="primary" onClick={() => go(`/p/${next.id}`)}>Start: {next.title}</button>}
-          {next && lastP?.id !== next.id && <p className="dim">Recommended next: <a href={`#/p/${next.id}`}>{next.title}</a></p>}
-        </div>
-        <div className="card">
-          <h3>Daily challenge</h3>
-          <p><a href={`#/p/${daily.id}`}>{daily.title}</a> {s.solved[daily.id] ? <span className="pill ok">done</span> : <span className="pill">+{{ E: 20, M: 40, H: 80 }[daily.diff]} XP</span>}</p>
-          <p className="dim">One playable problem per day, chosen deterministically from the date.</p>
-        </div>
-        <div className="card">
-          <h3>Weak spots</h3>
-          {weak.length ? weak.map(w => <div key={w.p.id}><a href={`#/p/${w.p.id}`}>{w.p.title}</a> <span className="dim">{w.n} attempts, unsolved</span></div>) : <p className="dim">Nothing yet — failed attempts show up here.</p>}
-        </div>
-        <div className="card">
-          <h3>Recent activity</h3>
-          {s.log.length ? s.log.slice(0, 5).map((a, i) => <div key={i} className="dim">{a.text}</div>) : <p className="dim">Solve a problem or answer a prediction to earn XP.</p>}
-        </div>
-      </div>
-      <h2>Worlds</h2>
-      <div className="subjects">{SUBJECTS.map(sub => (
-        <a key={sub.key} className={`card subj ${sub.status}`} href={sub.status === 'live' ? (sub.key === 'dsa' ? '#/dsa' : `#/${sub.key}`) : `#/world/${sub.key}`}>
-          <div className="row"><b>{sub.world}</b><span className={`pill ${sub.status === 'live' ? 'ok' : ''}`}>{sub.status === 'live' ? 'Live' : 'Not built yet'}</span></div>
-          <div className="dim">{sub.name}</div>
-          <p>{sub.blurb}</p>
-          <div className="dim small">{sub.modules.length} modules · {sub.difficulty} · ~{sub.hours} h</div>
-          {sub.key === 'dsa' && <><Bar v={solvedN} max={PLAYABLE_COUNT} /><div className="dim small">{solvedN}/{PLAYABLE_COUNT} playable solved</div></>}
-        </a>))}</div>
-    </div>
   );
 }
 
@@ -166,71 +120,18 @@ function World({ k }: { k: string }) {
   );
 }
 
-function Learn() {
-  const s = useStore();
-  const [q, setQ] = useState('');
-  const [onlyPlay, setOnlyPlay] = useState(false);
-  const [open, setOpen] = useState<Record<number, boolean>>({});
-  const solvedN = Object.keys(s.solved).length;
-  const [tab, setTab] = useState<'sheet' | 'concepts'>('sheet');
-  if (tab === 'concepts') return (
-    <div className="page"><h1>DSA Concepts</h1>
-      <div className="stage-bar"><button className="tab" onClick={() => setTab('sheet')}>A2Z problem sheet</button><button className="tab on">Concept cards (16 topics)</button></div>
-      <ConceptCards concepts={DSA_CONCEPTS} /></div>
-  );
-  return (
-    <div className="page">
-      <div className="stage-bar"><button className="tab on">A2Z problem sheet</button><button className="tab" onClick={() => setTab('concepts')}>Concept cards (16 topics)</button></div>
-      <h1>Striver's A2Z DSA Sheet <span className="dim">— {ALL_PROBLEMS.length} problems · {PLAYABLE_COUNT} playable</span></h1>
-      <div className="note small">The full step/topic/problem structure is listed. Problems marked <span className="pill ok">Playable</span> have real C++ code, tracing, a visualization, hidden tests and a solve mode. The rest are listed but their code is not authored yet — opening them says so. The list was reconstructed from the public sheet's structure and may differ slightly from the live page.</div>
-      <div className="filters"><input placeholder="Search problems…" value={q} onChange={e => setQ(e.target.value)} />
-        <label><input type="checkbox" checked={onlyPlay} onChange={e => setOnlyPlay(e.target.checked)} /> Playable only</label>
-        <span className="dim">{solvedN} solved</span></div>
-      {SHEET.map(step => {
-        const probs = step.topics.flatMap(t => t.problems);
-        const play = probs.filter(p => PLAYABLE_BY_TITLE.has(p.title));
-        const done = probs.filter(p => s.solved[p.id]).length;
-        const isOpen = open[step.n] ?? !!q;
-        const shown = (t: typeof step.topics[0]) => t.problems.filter(p => p.title.toLowerCase().includes(q.toLowerCase()) && (!onlyPlay || PLAYABLE_BY_TITLE.has(p.title)));
-        if ((q || onlyPlay) && !step.topics.some(t => shown(t).length)) return null;
-        return (
-          <div key={step.n} className="step">
-            <button className="step-head" onClick={() => setOpen(o => ({ ...o, [step.n]: !isOpen }))}>
-              <span>{isOpen ? '▾' : '▸'} Step {step.n}: {step.name}</span>
-              <span className="dim">{play.length} playable · {done}/{probs.length}</span>
-              <Bar v={done} max={probs.length} />
-            </button>
-            {isOpen && step.topics.map((t, ti) => shown(t).length > 0 && (
-              <div key={ti} className="topic"><h4>{t.name}</h4>
-                {shown(t).map(p => {
-                  const pl = PLAYABLE_BY_TITLE.has(p.title);
-                  return <a key={p.id} className={`prow ${pl ? '' : 'off'}`} href={`#/p/${p.id}`}>
-                    <span>{s.solved[p.id] ? '✅' : pl ? '▶' : '·'}</span><span className="t">{p.title}</span>
-                    <span className={`pill d${p.diff}`}>{{ E: 'Easy', M: 'Medium', H: 'Hard' }[p.diff]}</span>
-                    {pl && <span className="pill ok">Playable</span>}</a>;
-                })}</div>))}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ProblemPage({ id }: { id: string }) {
-  const p = PROBLEM_BY_ID.get(id);
-  if (!p) return <div className="page">Problem not found. <a href="#/dsa">Back</a></div>;
-  const pl = PLAYABLE_BY_TITLE.get(p.title);
-  if (!pl) return (
-    <div className="page"><a href="#/dsa">← A2Z sheet</a><h1>{p.title}</h1>
-      <div className="note">This problem is in the A2Z curriculum but <b>its C++ solution, tests and visualization have not been authored yet</b>, so there is nothing real to trace. Rather than show a fake animation, it is left empty.</div>
-      <p>Meanwhile you can paste any function using the supported subset into the <a href="#/playground">Playground</a> and trace it, or try one of the {PLAYABLE_COUNT} playable problems.</p>
-      <p className="dim">Step {p.step} · {SHEET.find(x => x.n === p.step)?.topics[p.topic].name}</p></div>
-  );
-  return <><PlaybookPanel step={p.step} /><Workspace key={id} problem={pl} id={id} diff={p.diff} /></>;
-}
-
 function Profile() {
   const s = useStore();
+  const auth = useAuth();
+  const [resetError, setResetError] = useState<string | null>(null);
+  const resetAll = async () => {
+    if (!confirm(auth.status === 'authed' ? 'Erase progress in this browser AND in your account? This cannot be undone.' : 'Erase all progress stored in this browser?')) return;
+    setResetError(null);
+    if (auth.status === 'authed') {
+      try { await api.deleteProgress(); } catch (e) { setResetError(e instanceof ApiError ? e.message : 'Could not reset your account progress.'); return; }
+    }
+    s.reset();
+  };
   const solvedN = Object.keys(s.solved).length;
   const lvl = levelOf(s.xp);
   const ach = [
@@ -244,8 +145,11 @@ function Profile() {
       <h3>Ranks</h3><div className="ranks">{RANKS.map((r, i) => <span key={r} className={`pill ${rankOf(s.xp) === r ? 'ok' : ''}`}>{i * 2 + 1}+ · {r}</span>)}</div>
       <h3>Achievements</h3>
       <div className="subjects">{ach.map(([n, d, ok]) => <div key={n} className={`card ${ok ? '' : 'locked'}`}><b>{ok ? '🏆' : '🔒'} {n}</b><div className="dim">{d}</div></div>)}</div>
-      <p><button onClick={() => { if (confirm('Erase all progress stored in this browser?')) s.reset(); }}>Reset progress</button></p>
-      <p className="dim small">Progress is stored in this browser only (localStorage). Accounts and cross-device sync need the backend phase (Supabase auth), which is not built yet.</p>
+      <p><button onClick={() => void resetAll()}>Reset progress</button></p>
+      {resetError && <div className="err" role="alert">{resetError}</div>}
+      <p className="dim small">{auth.status === 'authed'
+        ? 'You are signed in: progress is saved to your account and merged across your devices. Reset erases it here and in your account.'
+        : <>Progress is stored in this browser only (localStorage). <a href="#/account">Sign in</a> to save it to an account and use it across devices.</>}</p>
     </div>
   );
 }

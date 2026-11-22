@@ -506,10 +506,13 @@ int maxNonAdjacent(vector<int>& nums) {
     return max(sold, rest);
 }`)], [[[1, 2, 3, 0, 2]], [[1]], [[2, 1]], [[1, 2, 4]], [[6, 1, 6, 4, 3, 0, 2]]], (p: number[]) => { const n = p.length; const f = (i: number, held: boolean): number => (i >= n ? 0 : held ? Math.max(f(i + 1, true), p[i] + f(i + 2, false)) : Math.max(f(i + 1, false), -p[i] + f(i + 1, true))); return f(0, false); }, ['Selling forces a skipped day.'], 'The cooldown becomes an extra "just sold" state.'),
   mk('Buy and Sell Stocks With Transaction Fee', 'maxProfitFee', 'Unlimited transactions; each costs fee (paid when selling). Return the maximum profit.', 'int maxProfitFee(vector<int>& prices, int fee)', 'return 0;', [
-    ap('Two-state machine', 'O(n)', 'O(1)', 'n', 'cash (not holding) and hold; selling subtracts the fee.', `int maxProfitFee(vector<int>& prices, int fee) {
+    ap('Two-state machine', 'O(n)', 'O(1)', 'n', 'cash (not holding) and hold, starting from buying on day 0 (starting hold at INT_MIN would overflow when price − fee is negative); selling subtracts the fee.', `int maxProfitFee(vector<int>& prices, int fee) {
+    if (prices.empty()) {
+        return 0;
+    }
     int cash = 0;
-    int hold = INT_MIN;
-    for (int i = 0; i < prices.size(); i++) {
+    int hold = -prices[0];
+    for (int i = 1; i < prices.size(); i++) {
         cash = max(cash, hold + prices[i] - fee);
         hold = max(hold, cash - prices[i]);
     }

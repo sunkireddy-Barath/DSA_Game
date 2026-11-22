@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Editor from '@monaco-editor/react';
+import Editor from './CodeEditor';
 import { runCpp, RunResult, TraceEvent } from '../engine/interp';
 import { evaluate, Verdict } from '../engine/judge';
 import type { Playable } from '../data/problems';
 import { Viz } from './Viz';
 import { Complexity } from './Complexity';
 import { Tutor } from './Tutor';
+import { AiTutor } from './AiTutor';
+import { NativePanel } from './NativePanel';
 import { useStore } from '../store';
 
 type Question = { idx: number; kind: 'cond' | 'var'; text: string; options: string[]; answer: string; explain: string };
@@ -57,7 +59,7 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
   const [predict, setPredict] = useState(false);
   const [question, setQuestion] = useState<Question | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
-  const [rightTab, setRightTab] = useState<'inspect' | 'complexity' | 'tutor'>('inspect');
+  const [rightTab, setRightTab] = useState<'inspect' | 'complexity' | 'tutor' | 'native'>('inspect');
   const [showProblem, setShowProblem] = useState(!playground);
   const [selectedCall, setSelectedCall] = useState<number | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
@@ -65,6 +67,8 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
   const [peeked, setPeeked] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [nativeErr, setNativeErr] = useState<number | null>(null);
+  const [editorReady, setEditorReady] = useState(false);
   const asked = useRef(new Set<number>());
   const edRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
@@ -148,9 +152,10 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
     }
     bps.forEach(l => d.push({ range: new m.Range(l, 1, l, 1), options: { glyphMarginClassName: 'gl-bp' } }));
     if (run?.errorLine) d.push({ range: new m.Range(run.errorLine, 1, run.errorLine, 1), options: { isWholeLine: true, className: 'ln-error' } });
+    if (nativeErr) d.push({ range: new m.Range(nativeErr, 1, nativeErr, 1), options: { isWholeLine: true, className: 'ln-error' } });
     decoRef.current?.clear();
     decoRef.current = ed.createDecorationsCollection(d);
-  }, [idx, events, bps, run, ev]);
+  }, [idx, events, bps, run, ev, nativeErr, editorReady]);
 
   const onMount = (ed: any, m: any) => {
     edRef.current = ed; monacoRef.current = m;
@@ -160,7 +165,7 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
         setBps(s => { const n = new Set(s); n.has(l) ? n.delete(l) : n.add(l); return n; });
       }
     });
-    setIdx(i => i); // trigger decorations
+    setEditorReady(true); // the editor can mount after the first run finished: redraw the current-line highlight
   };
 
   // ----- solve mode -----
@@ -188,6 +193,19 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
   // ----- derived -----
   const recursive = (run?.stats.calls ?? 0) > 1;
   const testsList = problem.tests;
+  const lastRunSummary = () => {
+    const parts: string[] = [];
+    if (run) parts.push(run.ok ? `in-browser tracer: returned ${fmt(problem.checkArg !== undefined ? run.args?.[problem.checkArg] : run.result)} after ${run.stats.steps} statements on input ${argsText.slice(0, 200)}` : `in-browser tracer error (${run.errorKind}${run.errorLine ? `, line ${run.errorLine}` : ''}): ${run.error}`);
+    if (verdict) {
+      if (verdict.compileError) parts.push(`judge: compile error: ${verdict.compileError}`);
+      else {
+        parts.push(`judge: ${verdict.passed}/${verdict.total} tests passed`);
+        const bad = verdict.results.find(r => !r.pass);
+        if (bad) parts.push(`first failing test: input ${JSON.stringify(bad.args).slice(0, 150)} expected ${JSON.stringify(bad.expected).slice(0, 100)} got ${bad.error ?? JSON.stringify(bad.got).slice(0, 100)}`);
+      }
+    }
+    return parts.join('\n').slice(0, 1900);
+  };
   const iteration = ev ? events.slice(0, idx + 1).filter(e => e.kind === 'line' && e.line === ev.line && e.callId === ev.callId).length : 0;
 
   return (
@@ -245,7 +263,7 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
             <div className={`err ${run.errorKind}`}>
               <b>{{ compile: 'Compile error', runtime: 'Runtime error', timeout: 'Time limit exceeded', unsupported: 'Not supported by the tracer yet', undefined: 'Error' }[String(run.errorKind) as 'compile']}</b>
               {run.errorLine ? ` (line ${run.errorLine})` : ''}: {run.error}
-              {run.errorKind === 'unsupported' && <div className="dim">The tracer runs a C++ subset (ints, bool, char, string, vector, unordered_map/set, recursion). It never fabricates a trace for constructs it cannot execute.</div>}
+              {run.errorKind === 'unsupported' && <div className="dim">The tracer runs a C++ subset and never fabricates a trace for constructs it cannot execute. Your code may still be valid C++: <button className="link" onClick={() => setRightTab('native')}>run it on real g++ instead</button>.</div>}
               {run.events.length > 0 && <div className="dim">Showing the trace up to the failure.</div>}
             </div>
           )}
@@ -268,14 +286,15 @@ export function Workspace({ problem, id, diff, playground }: WorkspaceProps) {
         {/* RIGHT */}
         <section className="panel side">
           <div className="panel-bar">
-            {(['inspect', 'complexity', 'tutor'] as const).map(t => <button key={t} className={`tab ${rightTab === t ? 'on' : ''}`} onClick={() => setRightTab(t)}>{{ inspect: 'Inspector', complexity: 'Complexity Lab', tutor: 'Tutor' }[t]}</button>)}
+            {(['inspect', 'complexity', 'tutor', 'native'] as const).map(t => <button key={t} className={`tab ${rightTab === t ? 'on' : ''}`} onClick={() => setRightTab(t)}>{{ inspect: 'Inspector', complexity: 'Complexity Lab', tutor: 'Tutor', native: 'g++ Run' }[t]}</button>)}
           </div>
           <div className="side-body">
             {rightTab === 'inspect' && ev && (
               <Inspector events={events} idx={idx} lines={lines} iteration={iteration} selectedCall={selectedCall} />
             )}
             {rightTab === 'complexity' && <Complexity problem={problem} run={run} apIdx={apIdx} />}
-            {rightTab === 'tutor' && <Tutor problem={problem} events={events} idx={idx} lines={lines} hintsShown={hintsShown} onHint={() => setHintsShown(h => Math.min(problem.hints.length, h + 1))} playground={playground} />}
+            {rightTab === 'tutor' && <><AiTutor problem={problem} code={code} events={events} idx={idx} lines={lines} lastRun={lastRunSummary()} playground={playground} /><h4>Step explainer <span className="pill">rule-based, always available</span></h4><Tutor problem={problem} events={events} idx={idx} lines={lines} hintsShown={hintsShown} onHint={() => setHintsShown(h => Math.min(problem.hints.length, h + 1))} playground={playground} /></>}
+            {rightTab === 'native' && <NativePanel problem={problem} code={code} fnName={fnName} argsText={argsText} tracer={run} playground={playground} onErrorLine={setNativeErr} />}
           </div>
         </section>
       </div>

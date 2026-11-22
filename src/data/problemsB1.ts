@@ -175,8 +175,8 @@ export const B1_PROBLEMS: Playable[] = [
     return message;
 }`)], [['Arun', 21], ['Bala', 7], ['X', 100]], (n: string, a: number) => `Hello, ${n}! You are ${a} years old.`, ['Convert the number with to_string.', 'Join the pieces with +.'], 'Output formatting is string building: cout simply writes the finished string.'),
   mk('Data Types', 'multiply', 'Return {a*b computed as int, a*b computed as long long}. Observe 32-bit overflow.', 'vector<long long> multiply(int a, int b)', 'return {};', [
-    ap('int vs long long', 'O(1)', 'O(1)', '1', 'Two multiplications: the int one wraps modulo 2³² when the product does not fit, the long long one holds up to about 9.2×10¹⁸.', `vector<long long> multiply(int a, int b) {
-    int small = a * b;
+    ap('int vs long long', 'O(1)', 'O(1)', '1', 'Two multiplications: narrowing to int wraps modulo 2³² when the product does not fit (a plain int * int that overflows is undefined behaviour in C++, so the product is computed in 64 bits and then narrowed), the long long one holds up to about 9.2×10¹⁸.', `vector<long long> multiply(int a, int b) {
+    int small = (int)((long long)a * b);
     long long big = (long long)a * b;
     return {small, big};
 }`)], [[6, 7], [100000, 100000], [-50000, 50000], [65536, 65536]], (a: number, b: number) => [Number(BigInt.asIntN(32, BigInt(a) * BigInt(b))), a * b], ['int is 32 bits. What happens to 10^10?', 'Cast one operand to long long before multiplying.'], 'The width of the type decides when arithmetic overflows; cast before the operation, not after.'),
