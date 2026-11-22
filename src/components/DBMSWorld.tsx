@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { DBMS_CONCEPTS } from '../dbms/concepts';
 import { BNode, BPlusTree, FD, Row, TX_OPS, TxMode, analyze, analyzeSchedule, bcnfDecompose, fd, fmtFD, isLossless, naturalJoin, parseSchedule, preservesDependencies, project, projectFDs, redundancy, runTransfer, sameRelation, violatesFD } from '../dbms/engines';
 import { Deadlock, useStepper } from './OSWorld';
@@ -132,6 +133,7 @@ function Schedules() {
       {err && <div className="err compile">{err}</div>}
       {res && (<div className="grid2">
         <div><div className="viz-label">Precedence (conflict) graph</div>
+          <HowTo>Circles are transactions. An arrow Ti → Tj means Ti has an operation that conflicts with one of Tj’s (same item, at least one write) and happens first. If the arrows form a cycle (drawn in red) no serial order exists, so the schedule is not conflict-serializable.</HowTo>
           <svg width={220} height={180} className="chart"><defs><marker id="sah" markerWidth="8" markerHeight="8" refX="17" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#f87171" /></marker></defs>
             {res.edges.map((e, k) => { const a = pos(e.from, res!.txs), b = pos(e.to, res!.txs); const hot = res!.cycle?.includes(e.from) && res!.cycle?.includes(e.to); return <line key={k} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={hot ? '#f87171' : '#8b93a0'} strokeWidth={hot ? 3 : 1.5} markerEnd="url(#sah)" />; })}
             {res.txs.map(t => { const p = pos(t, res!.txs); return <g key={t} transform={`translate(${p.x},${p.y})`}><circle r={16} className="tn" /><text y={4} textAnchor="middle" className="tl">T{t}</text></g>; })}</svg>
@@ -170,6 +172,7 @@ function BTree() {
         <button className="primary" onClick={() => submit('ins')}>Insert</button><button onClick={() => submit('del')}>Delete</button><button onClick={() => submit('find')}>Search</button>
         <button onClick={() => setOps(o => [...o, ...[50, 20, 70, 10, 30, 60, 80, 25, 35, 65].map(k => ({ k: 'ins' as const, key: k }))])}>Insert sample keys</button>
         <button onClick={() => setOps(o => o.slice(0, -1))} disabled={!ops.length}>◀ Undo</button><button onClick={() => setOps([])}>⏮ Reset</button></div>
+      <HowTo>Each box is a node holding sorted keys. A search starts at the root and follows the pointer that brackets the value; every record lives in a leaf at the bottom, and the leaves are linked left to right for range scans. A node that overflows splits and pushes a key up to its parent.</HowTo>
       <div className="tree-scroll"><svg width={Math.max(width, 300)} height={h * 70 + 30}>
         {nodes.filter(n => !n.leaf).map(n => n.children.map(c => <line key={`${n.id}-${c.id}`} x1={pos.get(n.id)!.x} y1={pos.get(n.id)!.y + 24} x2={pos.get(c.id)!.x} y2={pos.get(c.id)!.y} className="edge" />))}
         {nodes.filter(n => n.leaf && n.next).map(n => <line key={`l${n.id}`} x1={pos.get(n.id)!.x + pos.get(n.id)!.w / 2} y1={pos.get(n.id)!.y + 12} x2={pos.get(n.next!.id)!.x - pos.get(n.next!.id)!.w / 2} y2={pos.get(n.next!.id)!.y + 12} stroke="#fbbf24" strokeWidth={2} strokeDasharray="4 3" />)}

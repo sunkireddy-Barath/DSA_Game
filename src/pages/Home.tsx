@@ -11,6 +11,8 @@ const go = (p: string) => { location.hash = p; };
 const PLAYABLE_COUNT = ALL_PROBLEMS.filter(p => PLAYABLE_TITLES.has(p.title)).length;
 const playableIds = ALL_PROBLEMS.filter(p => PLAYABLE_TITLES.has(p.title));
 
+const WORLD_ICON: Record<string, string> = { dsa: '🧩', dbms: '🗄️', sql: '🔎', os: '⚙️', oops: '🧱', cn: '🌐', coa: '🧠', sysdesign: '🏗️', se: '🛠️', dev: '💻' };
+
 function Bar({ v, max }: { v: number; max: number }) { return <div className="bar"><div style={{ width: `${max ? (v / max) * 100 : 0}%` }} /></div>; }
 
 function Dashboard() {
@@ -21,15 +23,28 @@ function Dashboard() {
   const lvl = levelOf(s.xp);
   const lastP = s.last && s.last !== 'playground' ? PROBLEM_BY_ID.get(s.last) : null;
   const weak = Object.entries(s.attempts).filter(([id]) => !s.solved[id]).map(([id, n]) => ({ p: PROBLEM_BY_ID.get(id)!, n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 3);
+  const toNext = 150 - (s.xp % 150);
+  const hero = lastP ? { label: `Continue: ${lastP.title}`, id: lastP.id } : next ? { label: `Start: ${next.title}`, id: next.id } : null;
   return (
     <div className="page">
-      <h1>Welcome back</h1>
+      <section className="hero">
+        <div>
+          <h1>Welcome back</h1>
+          <p className="lead">{solvedN === 0 ? 'Watch real C++ run line by line, predict what happens next, then solve it yourself. Pick up where it makes sense:' : `${solvedN} problem${solvedN === 1 ? '' : 's'} solved. ${toNext} XP to level ${lvl + 1}: keep the streak alive.`}</p>
+          <div className="hero-cta">
+            {hero && <button className="primary" onClick={() => go(`/p/${hero.id}`)}>{hero.label}</button>}
+            <button onClick={() => go('/dsa')}>Browse all {ALL_PROBLEMS.length} problems</button>
+            <button onClick={() => go('/interview')}>Interview practice</button>
+          </div>
+        </div>
+        <div className="ring" style={{ '--p': (s.xp % 150) / 1.5 } as React.CSSProperties} role="img" aria-label={`Level ${lvl}, ${s.xp % 150} of 150 XP`}><div><b>{lvl}</b><span>Level</span></div></div>
+      </section>
       <div className="stats">
-        <div className="card"><span>Problems solved</span><b>{solvedN}</b><i>of {PLAYABLE_COUNT} playable · {ALL_PROBLEMS.length} in sheet</i></div>
-        <div className="card"><span>Total XP</span><b>{s.xp}</b><Bar v={s.xp % 150} max={150} /><i>Level {lvl} · {rankOf(s.xp)}</i></div>
-        <div className="card"><span>Daily streak</span><b>{s.streak.count} 🔥</b><i>days in a row</i></div>
-        <div className="card"><span>Learning time</span><b>{(s.seconds / 3600).toFixed(1)} h</b><i>while a workspace is open</i></div>
-        <div className="card"><span>Prediction accuracy</span><b>{s.predictions.total ? Math.round((s.predictions.correct / s.predictions.total) * 100) : 0}%</b><i>{s.predictions.correct}/{s.predictions.total} correct</i></div>
+        <div className="card"><span className="ico" aria-hidden="true">✅</span><span>Problems solved</span><b>{solvedN}</b><i>of {PLAYABLE_COUNT} playable · {ALL_PROBLEMS.length} in sheet</i></div>
+        <div className="card"><span className="ico" aria-hidden="true">⚡</span><span>Total XP</span><b>{s.xp}</b><Bar v={s.xp % 150} max={150} /><i>Level {lvl} · {rankOf(s.xp)}</i></div>
+        <div className="card"><span className="ico" aria-hidden="true">🔥</span><span>Daily streak</span><b>{s.streak.count} 🔥</b><i>days in a row</i></div>
+        <div className="card"><span className="ico" aria-hidden="true">⏱</span><span>Learning time</span><b>{(s.seconds / 3600).toFixed(1)} h</b><i>while a workspace is open</i></div>
+        <div className="card"><span className="ico" aria-hidden="true">🎯</span><span>Prediction accuracy</span><b>{s.predictions.total ? Math.round((s.predictions.correct / s.predictions.total) * 100) : 0}%</b><i>{s.predictions.correct}/{s.predictions.total} correct</i></div>
       </div>
       <div className="grid2">
         <div className="card">
@@ -53,8 +68,8 @@ function Dashboard() {
       </div>
       <h2>Worlds</h2>
       <div className="subjects">{SUBJECTS.map(sub => (
-        <a key={sub.key} className={`card subj ${sub.status}`} href={sub.status === 'live' ? (sub.key === 'dsa' ? '#/dsa' : `#/${sub.key}`) : `#/world/${sub.key}`}>
-          <div className="row"><b>{sub.world}</b><span className={`pill ${sub.status === 'live' ? 'ok' : ''}`}>{sub.status === 'live' ? 'Live' : 'Not built yet'}</span></div>
+        <a key={sub.key} className={`card subj world-${sub.key} ${sub.status}`} href={sub.status === 'live' ? (sub.key === 'dsa' ? '#/dsa' : `#/${sub.key}`) : `#/world/${sub.key}`}>
+          <div className="row"><span style={{ display: 'flex', alignItems: 'center' }}><span className="world-ico" aria-hidden="true">{WORLD_ICON[sub.key] ?? '◆'}</span><b>{sub.world}</b></span><span className={`pill ${sub.status === 'live' ? 'ok' : ''}`}>{sub.status === 'live' ? 'Live' : 'Not built yet'}</span></div>
           <div className="dim">{sub.name}</div>
           <p>{sub.blurb}</p>
           <div className="dim small">{sub.modules.length} modules · {sub.difficulty} · ~{sub.hours} h</div>

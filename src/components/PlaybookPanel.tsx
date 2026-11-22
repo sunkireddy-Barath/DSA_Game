@@ -5,7 +5,7 @@ export function PlaybookPanel({ step }: { step: number }) {
   const p = playbookFor(step);
   if (!p) return null;
   return (
-    <details className="card" style={{ margin: '8px 16px' }}>
+    <details className="playbook">
       <summary><b>Interview playbook for this topic</b> — how to recognise it, how to answer, where it is used</summary>
       <h4>Recognise it</h4><ul>{p.signals.map(x => <li key={x}>{x}</li>)}</ul>
       <h4>Say it like this</h4><ol>{p.script.map(x => <li key={x}>{x}</li>)}</ol>

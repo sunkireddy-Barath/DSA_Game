@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { Algo, BankerState, DiskAlgo, PageAlgo, Proc, ResourceSim, diskSchedule, need, pageReplacement, requestResources, safety, schedule } from '../os/engines';
 
 /** shared stepper: Start/Pause/Next/Back/Reset/Speed over `n` positions (0..n) */
@@ -57,6 +58,7 @@ function Scheduling() {
       {!ok && <div className="err compile">{res as string}</div>}
       {ok && (<>
         <div className="viz-label">Gantt chart</div>
+        <HowTo>Gantt chart: time runs left to right. Each coloured block is one process holding the CPU: its width is how long it ran and the small number under it is the time it started. “idle” means no process was ready to run.</HowTo>
         <div className="gantt">{shown.map((s, k) => <div key={k} className="gseg" style={{ width: `${(s.end - s.start) * 34}px`, background: col(s.pid, all) }}><b>{s.pid ?? 'idle'}</b><span>{s.start}</span></div>)}<span className="gend">{i}</span></div>
         <div className="grid2">
           <div className="card"><h4>At time t = {i}</h4><div>Running: <b>{tick && i < res.makespan ? tick.running ?? 'idle' : '—'}</b></div><div>Ready queue: <b>{tick && i < res.makespan ? tick.ready.join(' → ') || '(empty)' : '—'}</b></div><div>Completed: <b>{finished.map(m => m.pid).join(', ') || '—'}</b></div></div>
@@ -88,6 +90,8 @@ function Paging() {
         <select value={algo} onChange={e => setAlgo(e.target.value as PageAlgo)}><option value="FIFO">FIFO</option><option value="LRU">LRU</option><option value="OPT">Optimal</option></select></div>
       {bad && <div className="err compile">Enter non-negative integers separated by commas.</div>}
       {r && (<>
+        <HowTo>Each column is one page reference (the number on top). The boxes under it are the memory frames after that reference. A page already in a frame is a hit; otherwise it is a page fault: the page is loaded, replacing another one when memory is full. The coloured frame is the one used for this reference.</HowTo>
+        <Legend items={[['sw-hit', '✓ hit: the page was already in memory'], ['sw-fault', '✗ page fault: it had to be loaded']]} />
         <div className="page-grid">{done.map((s, k) => <div key={k} className="pcol"><div className={`pref ${s.fault ? 'bad' : 'good'}`}>{s.ref}</div>{s.frames.map((f, j) => <div key={j} className={`pf ${j === s.slot ? (s.fault ? 'fault' : 'hit') : ''}`}>{f ?? ''}</div>)}<div className="pm">{s.fault ? '✗' : '✓'}</div></div>)}</div>
         <div className="card">{last ? <><b>Step {i}:</b> {last.why}</> : 'Press Start or Next to request the first page.'}<div>Faults so far: <b>{done.filter(s => s.fault).length}</b> · Hits: <b>{done.filter(s => !s.fault).length}</b></div></div>
         {ui}
@@ -147,6 +151,7 @@ export function Deadlock({ names = PROCS, resources = RES, label = 'process' }: 
         <div><div className="viz-label">Lock table</div><table className="sqlt"><thead><tr><th>Resource</th><th>Held by</th><th>Waiting queue</th></tr></thead><tbody>{resources.map(x => <tr key={x}><td>{x}</td><td>{sim.res[x].holder ?? <i className="dim">free</i>}</td><td>{sim.res[x].queue.join(', ') || '—'}</td></tr>)}</tbody></table>
           <div className="viz-label">Wait-for edges (waiter → holder)</div><div>{sim.waitFor().map(([a, b]) => `${a} → ${b}`).join('   ') || <span className="dim">none</span>}</div></div>
         <div><div className="viz-label">Wait-for graph</div>
+          <HowTo>Circles are processes. An arrow A → B means A is waiting for something B holds. A closed loop of arrows is a deadlock: nobody in the loop can ever continue.</HowTo>
           <svg width={300} height={220} className="chart">
             <defs><marker id="dah" markerWidth="8" markerHeight="8" refX="16" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#f87171" /></marker></defs>
             {sim.waitFor().map(([a, b], k) => { const A = pos(names.indexOf(a), names.length, 70), B = pos(names.indexOf(b), names.length, 70); const inCycle = cycle && cycle.includes(a) && cycle.includes(b); return <line key={k} x1={A.x} y1={A.y} x2={B.x} y2={B.y} stroke={inCycle ? '#f87171' : '#8b93a0'} strokeWidth={inCycle ? 3 : 1.5} markerEnd="url(#dah)" />; })}
@@ -176,7 +181,7 @@ function Disk() {
         <select value={algo} onChange={e => setAlgo(e.target.value as DiskAlgo)}><option value="FCFS">FCFS</option><option value="SSTF">SSTF</option><option value="SCAN">SCAN</option><option value="CSCAN">C-SCAN</option></select>
         {(algo === 'SCAN' || algo === 'CSCAN') && <select value={dir} onChange={e => setDir(e.target.value as 'up' | 'down')}><option value="up">towards higher tracks</option><option value="down">towards lower tracks</option></select>}</div>
       {bad && <div className="err compile">Tracks must be integers in 0..{size - 1}.</div>}
-      {r && <><svg width={W} height={H} className="chart">{pts.map((v, k) => k > 0 && <line key={k} x1={x(pts[k - 1])} y1={20 + 28 * (k - 1)} x2={x(v)} y2={20 + 28 * k} stroke="#7c9cff" strokeWidth={2} />)}
+      {r && <><HowTo>The head path: each dot is a track the head visits, from top to bottom in the order the requests are served (the amber dot is the starting position). The horizontal distance between two dots is how far the head had to move.</HowTo><svg width={W} height={H} className="chart">{pts.map((v, k) => k > 0 && <line key={k} x1={x(pts[k - 1])} y1={20 + 28 * (k - 1)} x2={x(v)} y2={20 + 28 * k} stroke="#7c9cff" strokeWidth={2} />)}
         {pts.map((v, k) => <g key={k}><circle cx={x(v)} cy={20 + 28 * k} r={4} fill={k === 0 ? '#fbbf24' : '#7c9cff'} /><text x={x(v) + 7} y={24 + 28 * k} className="axis" style={{ fontSize: 11 }}>{v}</text></g>)}</svg>
         {ui}<div className="card">Distance so far: <b>{dist}</b> · Total for the full schedule: <b>{r.total}</b> tracks{(algo === 'SCAN' || algo === 'CSCAN') ? ' (the head travels to the disk edge; in C-SCAN the return jump is counted)' : ''}</div></>}
     </div>

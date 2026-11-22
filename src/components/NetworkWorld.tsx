@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { CN_CONCEPTS } from '../cn/concepts';
 import { ConceptCards } from './ConceptCards';
 import { useStepper } from './OSWorld';
@@ -17,6 +18,8 @@ function Subnetting() {
       {err && <div className="err compile">{err}</div>}
       {s && (<>
         <div className="viz-label">The 32 bits: the first {prefix} are the network part, the rest identify the host</div>
+        <HowTo>The 32 bits of the address in four groups of 8. Bits covered by the prefix length are the network part, shared by every host on the subnet; the remaining host bits identify one device inside it.</HowTo>
+        <Legend items={[['sw-in', 'network bits (set by the prefix length)'], ['sw-changed', 'host bits']]} />
         <div className="bits">{ipBits.split('').map((b, i) => <span key={i} className={`bit ${maskBits(prefix)[i]}`}>{b}{(i + 1) % 8 === 0 && i < 31 ? <i>.</i> : ''}</span>)}</div>
         <table className="sqlt"><tbody>
           {([['Subnet mask', s.mask], ['Mask (binary)', s.maskBin], ['Wildcard mask', s.wildcard], ['IP (binary)', s.ipBin], ['Network address', s.network], ['Network (binary)', s.netBin], ['Broadcast address', s.broadcast], ['First usable host', s.firstHost], ['Last usable host', s.lastHost], ['Total addresses', s.total.toLocaleString()], ['Usable hosts', s.usable.toLocaleString()], ['Class (historical)', s.cls], ['Private range (RFC 1918)', s.isPrivate ? 'yes' : 'no']] as const).map(([k, v]) => <tr key={k}><th>{k}</th><td className="mono">{v}</td></tr>)}</tbody></table>
@@ -37,6 +40,7 @@ function Tcp() {
     <div>
       <div className="controls"><label>Interrupt a packet <select value={drop ?? ''} onChange={e => setDrop((e.target.value || null) as Drop)}><option value="">none</option><option value="SYN">drop the SYN</option><option value="SYN-ACK">drop the SYN-ACK</option><option value="ACK">drop the final ACK</option></select></label></div>
       {ui}
+      <HowTo>The left and right boxes are the two hosts with their current TCP state. The middle shows the segments travelling between them, in time order from top to bottom (SYN, SYN-ACK, ACK to open; FIN to close). A struck-through red segment was lost on the network and has to be sent again.</HowTo>
       <div className="tcp"><div className="host"><b>Client</b><div className="state">{cur?.clientState ?? 'CLOSED'}</div></div>
         <div className="wire">{shown.filter(e => e.flags).map((e, k) => <div key={k} className={`msg-row ${e.from === 'Client' ? 'r' : 'l'} ${e.lost ? 'lost' : ''}`}><span>{e.flags}{e.seq !== undefined ? ` seq=${e.seq}` : ''}{e.ack !== undefined ? ` ack=${e.ack}` : ''} {e.lost ? '✗ LOST' : ''} <i className="dim">t={e.t}</i></span></div>)}</div>
         <div className="host"><b>Server</b><div className="state">{cur?.serverState ?? 'LISTEN'}</div></div></div>
@@ -62,7 +66,7 @@ function Routing() {
     <div>
       <div className="controls"><label>Source <select value={src} onChange={e => setSrc(e.target.value)}>{nodes.map(n => <option key={n}>{n}</option>)}</select></label>
         <label>Destination <select value={dst} onChange={e => setDst(e.target.value)}>{nodes.map(n => <option key={n}>{n}</option>)}</select></label></div>
-      <div className="grid2"><div><svg width={260} height={220} className="chart">
+      <div className="grid2"><div><HowTo>Circles are routers, lines are links and the number on a line is its cost. The green path is the cheapest route from the source to the destination, the one with the lowest total cost.</HowTo><svg width={260} height={220} className="chart">
         {links.map((l, k) => { const a = pos(l.a), b = pos(l.b); const hot = onPath(l.a, l.b); return <g key={k}><line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={hot ? '#34d399' : '#8b93a0'} strokeWidth={hot ? 4 : 1.5} /><text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 4} className="ptr-lbl">{l.cost}</text></g>; })}
         {nodes.map(n => { const p = pos(n); return <g key={n} transform={`translate(${p.x},${p.y})`}><circle r={16} className={`tn ${path?.includes(n) ? 'visited' : ''}`} /><text y={4} textAnchor="middle" className="tl">{n}</text></g>; })}</svg>
         <div className="card">{path ? <>Shortest path {src} → {dst}: <b>{path.join(' → ')}</b> (cost <b>{sp.dist[dst]}</b>)</> : 'No route.'}</div>
@@ -120,6 +124,7 @@ function Crc() {
       {res && (<><div className="card">Append {gen.length - 1} zeros, divide (XOR long division) by {gen}. Remainder = <b className="mono">{res.remainder}</b> → transmitted codeword <b className="mono">{res.codeword}</b></div>
         <details open><summary className="small dim">Division steps</summary>{res.steps.map((s, k) => <div key={k} className="mono small">{s}</div>)}</details>
         <h4>Corrupt a bit in transit (click a bit)</h4>
+        <HowTo>Each box is one received bit. Click a bit to flip it, which simulates noise on the wire, and watch whether the receiver’s check notices the error.</HowTo>
         <div className="bits">{recv.split('').map((b, k) => <button key={k} className={`bit ${k === flip ? 'h' : 'n'}`} onClick={() => setFlip(flip === k ? null : k)}>{b}</button>)}</div>
         <div className={/^0*$/.test(rem) ? 'good' : 'bad'}>Receiver remainder: <b className="mono">{rem}</b> — {/^0*$/.test(rem) ? (flip === null ? '✓ accepted: no error detected.' : '✓ remainder is zero although a bit was flipped: an undetected error (possible only if the error pattern is a multiple of the generator).') : '✗ error detected: the frame is discarded.'}</div></>)}
     </div>

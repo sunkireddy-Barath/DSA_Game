@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { DEV_CONCEPTS } from '../dev/concepts';
 import { ConceptCards } from './ConceptCards';
 import { Shell, modeStr } from '../dev/shell';
@@ -22,6 +23,7 @@ function GitPanel({ sh }: { sh: Shell }) {
         <div className="card"><h4>Repository (HEAD {here.head.branch ?? 'detached'} @ {short(here.headId ?? '') || '—'})</h4>{Object.keys(head).map(f => <div key={f} className="small mono">{f}</div>)}{!Object.keys(head).length && <span className="dim small">no commits yet</span>}</div>
       </div>
       <div className="small dim">staged: {st.staged.length} · unstaged: {st.unstaged.length} · untracked: {st.untracked.length}{here.merging ? ' · MERGING (resolve conflicts, git add, git commit)' : ''}</div>
+      {commits.length > 0 && <HowTo>Each circle is a commit (its short id is under it) and each line points to its parent commit. Names above a circle are branches; HEAD→name is the branch you are on. The highlighted circle is where HEAD points now.</HowTo>}
       {commits.length > 0 && <div className="tree-scroll"><svg width={Math.max(300, commits.length * 70 + 60)} height={branchNames.length * 46 + 70}>
         {commits.map(c => c.parents.map(p => { const pc = here.commits.get(p); return pc ? <line key={c.id + p} x1={X(pc)} y1={Y(p)} x2={X(c)} y2={Y(c.id)} className="edge" /> : null; }))}
         {commits.map(c => <g key={c.id} transform={`translate(${X(c)},${Y(c.id)})`}><circle r={11} className={`tn ${c.id === here.headId ? 'tagged' : ''}`} /><text y={32} textAnchor="middle" className="axis" style={{ fontSize: 9 }}>{short(c.id)}</text>
@@ -59,7 +61,7 @@ function Terminal() {
           <div className="term-row"><span className="prompt">{sh.prompt()}</span><input id="term-in" value={input} onChange={e => setInput(e.target.value)} autoFocus spellCheck={false} autoComplete="off"
             onKeyDown={e => { if (e.key === 'Enter') exec(); else if (e.key === 'ArrowUp') { hi.current = Math.max(0, hi.current - 1); setInput(hist.current[hi.current] ?? ''); } else if (e.key === 'ArrowDown') { hi.current = Math.min(hist.current.length, hi.current + 1); setInput(hist.current[hi.current] ?? ''); } }} /></div></div>
           <div className="dim small">↑/↓ history · pipes, redirection, &&, $VARS supported.</div></div>
-        <div><div className="viz-label">File system under /home/student (live)</div><div className="ftree">{tree.map(({ p, n }) => <div key={p} className="small mono"><span className="dim">{modeStr(n)} {n.owner}</span> {p.replace('/home/student/', '')}{n.dir ? '/' : ''}</div>)}{!tree.length && <span className="dim small">empty</span>}</div>
+        <div><div className="viz-label">File system under /home/student (live)</div><HowTo>A live listing of the files and directories under /home/student. The grey text is the permission string and owner; it changes as your shell commands run.</HowTo><div className="ftree">{tree.map(({ p, n }) => <div key={p} className="small mono"><span className="dim">{modeStr(n)} {n.owner}</span> {p.replace('/home/student/', '')}{n.dir ? '/' : ''}</div>)}{!tree.length && <span className="dim small">empty</span>}</div>
           <div className="small dim">cwd: <b className="mono">{sh.cwd}</b></div></div>
       </div>
       <h4>Git view</h4><GitPanel sh={sh} />

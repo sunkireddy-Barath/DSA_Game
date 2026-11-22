@@ -43,5 +43,5 @@ export function ProblemPage({ id }: { id: string }) {
       <div className="note">This problem is in the A2Z list but has no playable solution in this build, so nothing is shown rather than a fake animation.</div>
       <p className="dim">Step {p.step} · {SHEET.find(x => x.n === p.step)?.topics[p.topic].name}</p></div>
   );
-  return <><PlaybookPanel step={p.step} /><Workspace key={id} problem={pl} id={id} diff={p.diff} /></>;
+  return <Workspace key={id} problem={pl} id={id} diff={p.diff} extra={<PlaybookPanel step={p.step} />} />;
 }

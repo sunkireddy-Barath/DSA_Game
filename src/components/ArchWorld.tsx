@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { COA_CONCEPTS } from '../coa/concepts';
 import { ConceptCards } from './ConceptCards';
 import { useStepper } from './OSWorld';
@@ -25,7 +26,7 @@ function Numbers() {
       {sum ? <div className="card mono">{sum.a} ({a})<br />+ {sum.b} ({b})<br />= {sum.result} ({sum.value})<br /><span className={sum.overflow ? 'bad' : 'good'}>Overflow flag: {sum.overflow ? 'SET — the signed result does not fit' : 'clear'}</span> · Carry out: {sum.carry} · Zero: {sum.zero ? 1 : 0} · Negative: {sum.negative ? 1 : 0}</div> : <div className="err compile">Both numbers must be integers within {r.min}…{r.max}.</div>}
       <h4>IEEE-754 single precision</h4>
       <div className="controls"><input value={fl} onChange={e => setFl(e.target.value)} style={{ width: 120 }} /></div>
-      {f && <div className="card"><div className="bits"><span className="bit h">{f.sign}</span>{f.exp.split('').map((c, k) => <span key={k} className="bit n">{c}</span>)}{f.man.split('').map((c, k) => <span key={k} className="bit">{c}</span>)}</div>
+      {f && <div className="card"><HowTo>IEEE-754 layout: the first (amber) bit is the sign, the blue group is the biased exponent and the plain bits are the fraction (mantissa). Value = (−1)^sign × 1.fraction × 2^(exponent − bias).</HowTo><div className="bits"><span className="bit h">{f.sign}</span>{f.exp.split('').map((c, k) => <span key={k} className="bit n">{c}</span>)}{f.man.split('').map((c, k) => <span key={k} className="bit">{c}</span>)}</div>
         <div className="small">sign {f.sign} · exponent {f.exp} = {f.biased} (unbiased {f.unbiased}) · fraction {f.man} · {f.hex} · kind: <b>{f.kind}</b></div><div className="small">Stored value: <b className="mono">{f.stored}</b> (the nearest representable number to {fl})</div></div>}
       <h4>Base converter</h4>
       <div className="controls"><input value={bin} onChange={e => setBin(e.target.value)} style={{ width: 160 }} className="mono" /> {bv === null ? <span className="bad">not a binary number</span> : <span className="mono">= {bv} decimal = 0x{toBase(bv, 16)} = 0o{toBase(bv, 8)}</span>}</div>
@@ -71,7 +72,7 @@ function Cpu() {
       <div className="note small">A tiny RISC CPU (8 registers, R0 = 0, 16 data words). Instructions: ADD SUB AND OR ADDI LW SW BEQ J HALT. Every value below is produced by actually executing your program.</div>
       <div className="grid2"><div><textarea value={src} onChange={e => setSrc(e.target.value)} rows={8} style={{ width: '100%', fontFamily: 'ui-monospace,monospace', background: 'var(--panel2)', color: 'var(--text)', border: '1px solid var(--line)', borderRadius: 8 }} />
         <button onClick={() => setSrc(SUM_PROG)}>Load a loop (sum 1..5)</button>{err && <div className="err compile">{err}</div>}{run?.error && <div className="err runtime">{run.error}</div>}</div>
-        <div><div className="dp-grid">{box('PC', 'Program Counter', String(st.pc))}{box('IMEM', 'Instruction Memory')}{box('IR', 'Instruction Register', st.ir || '—')}{box('CU', 'Control Unit')}{box('REGS', 'Register File')}{box('ALU', 'ALU')}{box('DMEM', 'Data Memory')}</div></div></div>
+        <div><HowTo>The CPU datapath. The Program Counter holds the address of the next instruction; it is fetched from instruction memory into the Instruction Register, the Control Unit decodes it, the register file and ALU do the work, and data memory is touched only by loads and stores. The highlighted block is the one active in this step.</HowTo><div className="dp-grid">{box('PC', 'Program Counter', String(st.pc))}{box('IMEM', 'Instruction Memory')}{box('IR', 'Instruction Register', st.ir || '—')}{box('CU', 'Control Unit')}{box('REGS', 'Register File')}{box('ALU', 'ALU')}{box('DMEM', 'Data Memory')}</div></div></div>
       {flat.length > 0 && <>{ui}
         <div className="card">{i === 0 ? 'Press Start / Next to execute the first instruction.' : <><b>Instruction {cur.k + 1}: {cur.instr.text}</b> — <span className="pill ok">{cur.stage}</span><div>{cur.note}</div></>}</div>
         <div className="viz-label">Registers {before ? '(changed values highlighted)' : ''}</div>
@@ -103,6 +104,7 @@ function Cache() {
       {g && <div className="card">{cfg.addrBits}-bit address = <span className="bit n">tag {g.tagBits}</span> <span className="bit h">index {g.indexBits}</span> <span className="bit">offset {g.offsetBits}</span> · {g.blocks} blocks in {g.sets} set(s) × {cfg.ways} way(s)</div>}
       {res && <>{ui}
         {cur && <div className={`card ${cur.hit ? '' : 'unsafe'}`}>Address <b>{cur.addr}</b> = tag <b>{cur.tag}</b>, index <b>{cur.index}</b>, offset <b>{cur.offset}</b> → set {cur.index}: <b className={cur.hit ? 'good' : 'bad'}>{cur.kind.toUpperCase()}</b>{cur.evicted !== null && <> · evicted tag {cur.evicted}</>}</div>}
+        <HowTo>Each row is a cache set and each “way” column holds the tag of the block stored there. An address is split into tag | set index | block offset: the index selects the row, and the access is a hit when one of that row’s tags equals the address tag.</HowTo>
         <table className="sqlt"><thead><tr><th>Set</th>{Array.from({ length: cfg.ways }, (_, w) => <th key={w}>Way {w} (tag)</th>)}</tr></thead><tbody>{Array.from({ length: res.sets }, (_, s) => { const last = [...done].reverse().find(a => a.index === s); const v = last ? last.setAfter : Array(cfg.ways).fill(null); return <tr key={s} className={cur && cur.index === s ? '' : ''}><th>{s}</th>{v.map((t, w) => <td key={w} className={cur && cur.index === s && t === cur.tag ? 'changed' : ''}>{t === null ? '—' : t}</td>)}</tr>; })}</tbody></table>
         <div className="small">So far: {hit} hit(s), {done.length - hit} miss(es). Whole sequence: hit rate {(res.hitRate * 100).toFixed(0)}% → AMAT = {ht} + {(1 - res.hitRate).toFixed(2)} × {mp} = <b>{amat(ht, 1 - res.hitRate, mp).toFixed(1)} cycles</b> (assuming 1-cycle hit, 100-cycle miss penalty).</div>
         {cmp.length > 0 && <div className="small">Compare mapping: {cmp.map(c => `${c![0]} → ${c![1]} hits`).join(' · ')}</div>}</>}
@@ -124,7 +126,8 @@ function Pipe() {
         <label><input type="checkbox" checked={fwd} onChange={e => setFwd(e.target.checked)} /> Forwarding (bypassing)</label>
         <div className="dim small">Instructions: ADD SUB AND OR MUL ADDI LW SW BEQ BNE NOP · add "taken" to a branch.</div>{err && <div className="err compile">{err}</div>}</div>
         {res && <div className="card"><div>Cycles: <b>{res.cycles}</b> · instructions: {prog!.length} · CPI: <b>{res.cpi.toFixed(2)}</b> (ideal without hazards: {res.ideal} cycles)</div><div>Stall cycles: <b>{res.stallCycles}</b> · branch flush: <b>{res.flushCycles}</b></div>{alt && <div className="dim small">Without changing anything else, {fwd ? 'turning forwarding off' : 'turning forwarding on'} gives {alt.cycles} cycles.</div>}</div>}</div>
-      {res && <>{ui}<div className="sql-table-wrap"><table className="sqlt pipe"><thead><tr><th>Instruction</th>{Array.from({ length: res.cycles }, (_, c) => <th key={c} className={c + 1 === i ? 'curcol' : ''}>{c + 1}</th>)}</tr></thead>
+      {res && <>{ui}<HowTo>Each row is an instruction and each column a clock cycle. The letters show which pipeline stage the instruction is in: IF fetch, ID decode, EX execute, MEM memory access, WB write back. ⏸ means it is stalled, waiting for a value produced by an earlier instruction.</HowTo>
+        <Legend items={[['st-IF', 'IF fetch'], ['st-ID', 'ID decode'], ['st-EX', 'EX execute'], ['st-MEM', 'MEM memory'], ['st-WB', 'WB write back'], ['st-stall', 'stall (bubble)']]} /><div className="sql-table-wrap"><table className="sqlt pipe"><thead><tr><th>Instruction</th>{Array.from({ length: res.cycles }, (_, c) => <th key={c} className={c + 1 === i ? 'curcol' : ''}>{c + 1}</th>)}</tr></thead>
         <tbody>{res.rows.map((r, k) => <tr key={k}><td className="mono">{r.text}</td>{r.cells.map((c, j) => <td key={j} className={`st-${c || 'none'} ${j + 1 > i ? 'future' : ''}`}>{c === 'stall' ? '⏸' : c}</td>)}</tr>)}</tbody></table></div>
         <div className="dim small">⏸ = the instruction is stalled in ID waiting for an operand (a bubble propagates down the pipeline).</div></>}
     </div>

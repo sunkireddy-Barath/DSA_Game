@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { FrameSnap, HeapNode, TraceEvent } from '../engine/interp';
+import { HowTo, Legend } from './Explain';
 
 export const isPtrType = (t: string) => t.endsWith('*');
 const ptrId = (v: any): number => (v && typeof v === 'object' && '$ptr' in v ? v.$ptr : 0);
@@ -71,6 +72,8 @@ export function ListView({ heap, prevHeap, frame }: { heap: HeapNode[]; prevHeap
         </svg>
       </div>
       {nullTags(frame).length > 0 && <div className="dim small">nullptr: {nullTags(frame).join(', ')}</div>}
+      <HowTo>Each box is a node: the left part is its value, the dot on the right is its <code>next</code> pointer, which the arrow follows. A name above a node is a pointer variable currently pointing at it; <code>null</code> marks the end of the list.</HowTo>
+      <Legend items={[['sw-ptr', 'node a pointer variable points to'], ['sw-hot', 'arrow re-linked in the last step']]} />
     </div>
   );
 }
@@ -117,6 +120,8 @@ export function TreeView({ heap, prevHeap, frame }: { heap: HeapNode[]; prevHeap
         </svg>
       </div>
       {nullTags(frame).length > 0 && <div className="dim small">nullptr: {nullTags(frame).join(', ')}</div>}
+      <HowTo>The top circle is the root; each node has at most two children (left below-left, right below-right). A name above a node is a pointer variable currently pointing at it.</HowTo>
+      <Legend items={[['sw-ptr', 'node a pointer variable points to'], ['sw-hot', 'value changed in the last step']]} />
     </div>
   );
 }
@@ -133,6 +138,7 @@ export function SeqView({ name, type, v, heap, prev }: { name: string; type: str
   if (v.kind === 'stack')
     return (
       <div className="viz-block"><div className="viz-label">{name} <span className="dim">{type} · size {a.length}</span></div>
+        <HowTo>Last in, first out: new values are pushed on top and only the top can be popped.</HowTo>
         <div className="stack-v">{a.length === 0 && <span className="dim">empty</span>}
           {[...a].reverse().map((x, k) => { const i = a.length - 1 - k; return <div key={i} className={`stk ${i === a.length - 1 ? 'top' : ''} ${changed(i) ? 'changed' : ''}`}>{elText(x, heap)}{i === a.length - 1 && <span className="top-tag">top</span>}</div>; })}
         </div></div>
@@ -140,6 +146,7 @@ export function SeqView({ name, type, v, heap, prev }: { name: string; type: str
   if (v.kind === 'queue' || v.kind === 'deque')
     return (
       <div className="viz-block"><div className="viz-label">{name} <span className="dim">{type} · size {a.length}</span></div>
+        <HowTo>First in, first out: values join at the back and leave from the front.</HowTo>
         <div className="cells">{a.length === 0 && <span className="dim">empty</span>}
           {a.map((x, i) => <div key={i} className="cell-wrap"><div className={`cell ${changed(i) ? 'changed' : ''}`}>{elText(x, heap)}</div><div className="idx">{i === 0 ? 'front' : i === a.length - 1 ? 'back' : ''}{a.length === 1 ? '' : ''}</div></div>)}
         </div></div>

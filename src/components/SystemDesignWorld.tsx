@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { SD_CONCEPTS } from '../sysdesign/concepts';
 import { ConceptCards } from './ConceptCards';
 import { useStepper } from './OSWorld';
@@ -47,7 +48,7 @@ function Designer() {
       <div className="controls"><span className="dim">Add:</span>{(['cdn', 'lb', 'server', 'cache', 'db', 'queue', 'worker'] as NType[]).map(t => <button key={t} onClick={() => add(t)}>{ICON[t]} {DEFAULTS[t].label}</button>)}
         <button className={connectFrom ? 'primary' : ''} onClick={() => setConnectFrom(sel)} disabled={!sel}>{connectFrom ? 'Click the target node…' : '🔗 Connect selected →'}</button></div>
       <div className="sd-grid">
-        <div><svg ref={svg} width={760} height={350} className="sd-canvas" onPointerMove={onMove} onPointerUp={() => (drag.current = null)} onPointerLeave={() => (drag.current = null)}>
+        <div><HowTo>Each circle is a component and each arrow a request path. A thicker arrow carries more traffic, and the percentage under a component is its load compared with its capacity. Drag a component to move it.</HowTo><svg ref={svg} width={760} height={350} className="sd-canvas" onPointerMove={onMove} onPointerUp={() => (drag.current = null)} onPointerLeave={() => (drag.current = null)}>
           <defs><marker id="sdah" markerWidth="8" markerHeight="8" refX="26" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b93a0" /></marker></defs>
           {design.edges.map((e, k) => { const a = by.get(e.from)!, b = by.get(e.to)!; const f = res.edges.find(x => x.from === e.from && x.to === e.to); return <g key={k}><line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={f && f.rps > 0 ? '#7c9cff' : '#3a4150'} strokeWidth={f ? 1.5 + Math.min(5, Math.log10(1 + f.rps)) : 1.5} markerEnd="url(#sdah)" onClick={() => setDesign(d => ({ ...d, edges: d.edges.filter((_, j) => j !== k) }))} style={{ cursor: 'pointer' }} /><text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 5} className="axis" style={{ fontSize: 10 }}>{f ? `${Math.round(f.rps).toLocaleString()}/s` : ''}</text></g>; })}
           {design.nodes.map(n => { const s = res.nodes[n.id]; return (

@@ -42,7 +42,7 @@ deployment before relying on it. Everything here was verified on a single Window
 - **Mock interviewer** is keyword matching, not an LLM; explanations/glossary prose is hand-written and not machine-verified.
 - Nothing is committed by this work; review `git status` first.
 
-## 4. What the browser tests cover (40 tests, all passing)
+## 4. What the browser tests cover (49 tests, all passing)
 
 Shell/routing/lazy loading and CSP (6) - Interview Q&A, mock interviewer, glossary (4) - SQL: load under CSP, run, stages, EXPLAIN, errors with hints,
 DML + reset, challenge pass/fail/XP/hints, lessons (6) - DSA: stepping, play/pause, approaches, predict mode, inspector, solve mode with hints/peek/XP/persistence,
@@ -74,9 +74,9 @@ AI tutor: context actually sent upstream, history, upstream failure handling, lo
 | Suite | Result |
 |---|---|
 | `tsc --noEmit` | clean |
-| `npm test` (vitest) | **1,282 passed**, 4 skipped (opt-in verification modes) |
+| `npm test` (vitest) | **1,288 passed**, 4 skipped (opt-in verification modes) |
 | `npm run test:backend` (pytest, incl. real Docker sandbox) | **103 passed** |
-| `npm run test:e2e` (Playwright, Edge, production build) | **40 passed** |
+| `npm run test:e2e` (Playwright, Edge, production build) | **49 passed** |
 | `npm run verify:native -- --ubsan` (every solution on real g++ 13 + UBSan) | **2,530 / 2,530 checkable runs match the reference**; 10 runs skipped (6 problems, tracer-only inputs); 0 compile errors |
 | `npm run build` | succeeds |
 
@@ -90,3 +90,13 @@ AI tutor: context actually sent upstream, history, upstream failure handling, lo
 - Sign-out left the form on the "Create account" tab; an expired session gave no message.
 - Reset progress could not work for signed-in users (merge is grow-only): added a server-side delete.
 - The editor depended on a public CDN (12-18 s loads, one outright stall): now self-hosted.
+- **Crash found by stepping through a linked-list trace in the browser**: the Inspector read `.$map` of a `nullptr` variable, so any linked-list problem crashed when the trace reached a null pointer. Fixed, and a unit test now renders the diagrams and inspector at sampled steps of every solution.
+- The editor showed `>=` as a single `≥` glyph (font ligatures), which misrepresents C++ source: ligatures are off.
+- Monaco's sticky-scroll overlay covered the first lines of code on phones: disabled.
+
+### Design and diagram work (this round)
+
+- Visual redesign (tokens, light/dark themes, glass navigation, hero dashboard, accented world cards, polished workspace, phone menu).
+- Every diagram now carries a legend and a "how to read this" note (arrays, maps, grids, recursion tree, lists, trees, stacks, queues, heaps, graphs, and the OS, DBMS, networking, architecture, OOP, system-design, SE and Git/Linux visuals) plus a per-step narration for DSA traces.
+- 9 new browser tests cover the explanations, the theme toggle, the phone menu, no horizontal overflow and focus visibility.
+- **Not verified**: visual design was reviewed from screenshots in Edge (desktop and 390 px phone, both themes) but not in Firefox/Safari, and not with a screen reader or a formal contrast audit.

@@ -1,4 +1,8 @@
+import '@fontsource-variable/inter/wght.css';
+import '@fontsource-variable/jetbrains-mono/wght.css';
+import './theme';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
+import './design.css';
 createRoot(document.getElementById('root')!).render(<App />);

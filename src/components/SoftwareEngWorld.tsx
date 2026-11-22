@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { SE_CONCEPTS } from '../se/concepts';
 import { PATTERNS } from '../se/patterns';
 import { ConceptCards } from './ConceptCards';
@@ -92,6 +93,7 @@ function Process() {
   return (
     <div>
       <h3>Kanban board (WIP limits: In Progress 2, Review 2)</h3>
+      <HowTo>Work moves left to right across the board. The number beside a column name is how many cards it holds; “/N” is its work-in-progress limit, so a column at its limit cannot take another card until one moves on.</HowTo>
       <div className="kanban">{k.cols.map((c, ci) => <div key={c} className="kcol"><b>{c}</b> <span className="dim small">{k.count(ci)}{k.wip[ci] !== null ? `/${k.wip[ci]}` : ''}</span>
         {k.cards.filter(x => x.col === ci).map(card => <div key={card.id} className="kcard">{card.title}{ci < 3 && <button onClick={() => { const r = k.move(card.id, ci + 1); setKmsg(r.ok ? '' : r.reason ?? ''); refresh(); }}>→</button>}</div>)}</div>)}</div>
       <div className="controls"><button onClick={() => { k.nextDay(); refresh(); }}>Next day (day {k.day})</button><button onClick={() => { setK(new Kanban(8)); setKmsg(''); }}>Reset</button>{kmsg && <span className="bad">{kmsg}</span>}</div>

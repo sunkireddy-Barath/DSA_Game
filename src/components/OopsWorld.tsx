@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { HowTo, Legend } from './Explain';
 import { OOPS_CONCEPTS } from '../oops/concepts';
 import { ConceptCards } from './ConceptCards';
 import { useStepper } from './OSWorld';
@@ -33,6 +34,7 @@ function Lab() {
       <div className="dim small">{sc.goal}</div>
       <div className="grid2">
         <div><div className="viz-label">Generated C++ (the highlighted line is the statement being executed)</div>
+          <HowTo>The highlighted line is the one about to run. The panels beside it show the objects in memory and what the program has printed so far.</HowTo>
           <pre className="codeview">{code.lines.map((l, k) => <div key={k} className={k + 1 === line ? 'cl cur' : 'cl'}><span className="ln">{k + 1}</span>{l || ' '}</div>)}</pre></div>
         <div>{ui}
           <div className="card">{ev ? <><b>{ev.title}</b>{ev.detail.map((d, k) => <div key={k} className="small">• {d}</div>)}{ev.warnings.map((w, k) => <div key={k} className="small bad">⚠ {w}</div>)}
@@ -43,7 +45,7 @@ function Lab() {
       <div className="grid2">
         <div><div className="viz-label">Stack variables / pointers</div>
           <table className="sqlt"><thead><tr><th>Name</th><th>Kind</th><th>Static type</th><th>Refers to</th></tr></thead><tbody>{Object.entries(snap.vars).map(([n, v]) => <tr key={n}><td className="mono">{n}</td><td>{{ obj: 'object', ptr: 'raw pointer', shared: 'shared_ptr', unique: 'unique_ptr' }[v.kind]}</td><td>{v.staticType}{v.kind === 'obj' ? '' : '*'}</td><td>{v.obj === null ? <i className="dim">null / moved-from</i> : `#${v.obj}${v.kind === 'shared' ? ` (use_count ${snap.refCounts[v.obj] ?? 1})` : ''}`}</td></tr>)}{Object.keys(snap.vars).length === 0 && <tr><td colSpan={4} className="dim">nothing yet</td></tr>}</tbody></table></div>
-        <div><div className="viz-label">Memory: objects</div><div className="objs">{objs.filter(o => o.where === 'stack').length > 0 && <div className="dim small">STACK</div>}{objs.filter(o => o.where === 'stack').map(objView)}{objs.filter(o => o.where === 'heap').length > 0 && <div className="dim small">HEAP</div>}{objs.filter(o => o.where === 'heap').map(objView)}{objs.length === 0 && <span className="dim">no objects yet</span>}</div></div>
+        <div><div className="viz-label">Memory: objects</div><HowTo>Objects on the STACK are destroyed automatically when their scope ends; objects on the HEAP stay until they are deleted (or until the last smart pointer to them goes away). A struck-through, faded object has already been destroyed.</HowTo><div className="objs">{objs.filter(o => o.where === 'stack').length > 0 && <div className="dim small">STACK</div>}{objs.filter(o => o.where === 'stack').map(objView)}{objs.filter(o => o.where === 'heap').length > 0 && <div className="dim small">HEAP</div>}{objs.filter(o => o.where === 'heap').map(objView)}{objs.length === 0 && <span className="dim">no objects yet</span>}</div></div>
       </div>
       <details><summary className="small dim">Class definitions in this scenario</summary>{prog.classes.map(c => <div key={c.name} className="small"><b>{c.name}</b>{c.base ? ` : ${c.base}` : ''} — methods: {c.methods.map(m => `${m.name}${isVirtualMethod(prog.classes, c.name, m.name) ? ' (virtual)' : ''}`).join(', ') || 'none'}</div>)}</details>
     </div>

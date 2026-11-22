@@ -1,8 +1,9 @@
-import { Component, ComponentType, lazy, LazyExoticComponent, ReactNode, Suspense, useEffect, useState } from 'react';
+import { Component, ComponentType, CSSProperties, lazy, LazyExoticComponent, ReactNode, Suspense, useEffect, useState } from 'react';
 import { SUBJECTS } from './data/subjects';
 import { levelOf, rankOf, RANKS, useStore } from './store';
 import { startAutoSync, useAuth } from './auth';
 import { api, ApiError } from './api';
+import { useTheme } from './theme';
 
 // Every page is its own chunk, loaded on demand. The Monaco editor itself is fetched only when a workspace opens.
 const page = <K extends string>(load: () => Promise<Record<K, any>>, key: K): LazyExoticComponent<ComponentType<any>> => lazy(() => load().then(m => ({ default: m[key] as ComponentType<any> })));
@@ -46,25 +47,32 @@ export default function App() {
   const auth = useAuth();
   const [, route, arg] = hash.split('/');
   const lvl = levelOf(s.xp);
+  const theme = useTheme(t => t.theme), toggleTheme = useTheme(t => t.toggle);
+  const [menu, setMenu] = useState(false);
+  useEffect(() => setMenu(false), [hash]);
   useEffect(() => { void useAuth.getState().init(); return startAutoSync(); }, []);
   return (
     <>
       <nav className="top">
-        <a className="brand" href="#/">CS&nbsp;QUEST</a>
-        <a className={!route ? 'on' : ''} href="#/">Dashboard</a>
-        <a className={route === 'worlds' || route === 'world' ? 'on' : ''} href="#/worlds">Worlds</a>
-        <a className={route === 'dsa' || route === 'p' ? 'on' : ''} href="#/dsa">Learn DSA</a>
-        <select className="worldsel" value={['dbms', 'sql', 'os', 'oops', 'cn', 'coa', 'sysdesign', 'se', 'dev'].includes(route) ? route : ''} onChange={e => { if (e.target.value) go(`/${e.target.value}`); }} aria-label="Jump to a world">
-          <option value="">Jump to a world…</option><option value="dbms">Database World</option><option value="sql">SQL World</option><option value="os">Operating System World</option><option value="oops">OOPS World</option><option value="cn">Network World</option><option value="coa">Computer Architecture World</option><option value="sysdesign">System Design World</option><option value="se">Software Engineering World</option><option value="dev">Developer Tools World</option>
-        </select>
-        <a className={route === 'interview' ? 'on' : ''} href="#/interview">Interview</a>
-        <a className={route === 'playground' ? 'on' : ''} href="#/playground">Playground</a>
-        <a className={route === 'profile' ? 'on' : ''} href="#/profile">Profile</a>
+        <a className="brand" href="#/"><span className="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0d1f" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></svg></span><span className="word">CS&nbsp;QUEST</span></a>
+        <div className={`links ${menu ? 'open' : ''}`} id="main-links">
+          <a className={!route ? 'on' : ''} href="#/">Dashboard</a>
+          <a className={route === 'worlds' || route === 'world' ? 'on' : ''} href="#/worlds">Worlds</a>
+          <a className={route === 'dsa' || route === 'p' ? 'on' : ''} href="#/dsa">Learn DSA</a>
+          <select className="worldsel" value={['dbms', 'sql', 'os', 'oops', 'cn', 'coa', 'sysdesign', 'se', 'dev'].includes(route) ? route : ''} onChange={e => { if (e.target.value) go(`/${e.target.value}`); }} aria-label="Jump to a world">
+            <option value="">Jump to a world…</option><option value="dbms">Database World</option><option value="sql">SQL World</option><option value="os">Operating System World</option><option value="oops">OOPS World</option><option value="cn">Network World</option><option value="coa">Computer Architecture World</option><option value="sysdesign">System Design World</option><option value="se">Software Engineering World</option><option value="dev">Developer Tools World</option>
+          </select>
+          <a className={route === 'interview' ? 'on' : ''} href="#/interview">Interview</a>
+          <a className={route === 'playground' ? 'on' : ''} href="#/playground">Playground</a>
+          <a className={route === 'profile' ? 'on' : ''} href="#/profile">Profile</a>
+        </div>
         <span className="spacer" />
         <a className={route === 'account' ? 'on' : ''} href="#/account" data-testid="nav-account">{auth.status === 'authed' && auth.user ? `👤 ${auth.user.displayName}` : 'Sign in'}</a>
-        <span className="hud">🔥 {s.streak.count}</span>
-        <span className="hud">Lv {lvl} · {rankOf(s.xp)}</span>
-        <span className="hud xp">{s.xp} XP</span>
+        <span className="hud" title="Daily streak">🔥 {s.streak.count}</span>
+        <span className="hud lvl">Lv {lvl} · {rankOf(s.xp)}</span>
+        <span className="hud xp" style={{ '--p': `${((s.xp % 150) / 150) * 100}%` } as CSSProperties} title={`${150 - (s.xp % 150)} XP to level ${lvl + 1}`}>{s.xp} XP</span>
+        <button className="icon-btn theme-toggle" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title="Toggle light / dark theme">{theme === 'dark' ? '☀' : '☾'}</button>
+        <button className="icon-btn menu-btn" onClick={() => setMenu(m => !m)} aria-label="Menu" aria-expanded={menu} aria-controls="main-links">{menu ? '✕' : '☰'}</button>
       </nav>
       <main>
         <Boundary resetKey={hash}>
