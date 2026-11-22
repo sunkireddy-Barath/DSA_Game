@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { GLOSSARY } from '../interview/glossary';
 import { InterviewQA } from './InterviewQA';
+import { MockInterview } from './MockInterview';
 
 /** Searchable interview glossary with a self-test mode (term -> try to recall -> reveal). */
 export function InterviewGlossary() {
   const [sub, setSub] = useState('all');
   const [q, setQ] = useState('');
   const [quiz, setQuiz] = useState(false);
-  const [tab, setTab] = useState<'qa' | 'gl'>('qa');
+  const [tab, setTab] = useState<'qa' | 'mock' | 'gl'>('qa');
   const [shown, setShown] = useState<Record<string, boolean>>({});
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -20,9 +21,10 @@ export function InterviewGlossary() {
       <h1>Interview Prep</h1>
       <div className="row" style={{ gap: 8 }}>
         <button className={tab === 'qa' ? 'btn' : 'btn ghost'} onClick={() => setTab('qa')}>Interview Q&amp;A game</button>
+        <button className={tab === 'mock' ? 'btn' : 'btn ghost'} onClick={() => setTab('mock')}>Mock interviewer</button>
         <button className={tab === 'gl' ? 'btn' : 'btn ghost'} onClick={() => setTab('gl')}>Glossary of terms</button>
       </div>
-      {tab === 'qa' ? <InterviewQA /> : <>
+      {tab === 'qa' ? <InterviewQA /> : tab === 'mock' ? <MockInterview /> : <>
       <p className="dim">{total} precise terms across {GLOSSARY.length} subjects: the exact definition, plus what interviewers usually probe. Use quiz mode to test yourself.</p>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', margin: '8px 0' }}>
         <button className={sub === 'all' ? 'btn' : 'btn ghost'} onClick={() => setSub('all')}>All</button>
