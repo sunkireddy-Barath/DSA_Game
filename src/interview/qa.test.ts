@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { QA_BANK, SUBJECTS } from './qa';
+import './qa2';
 import { PLAYBOOKS } from './playbook';
 import { SHEET } from '../data/sheet';
 
 describe('interview bank', () => {
   it('every subject has questions and each is well-formed with a valid answer key', () => {
     const ids = new Set<string>();
-    for (const k of Object.keys(SUBJECTS)) expect(QA_BANK.filter(q => q.subject === k).length, k).toBeGreaterThanOrEqual(6);
+    for (const k of Object.keys(SUBJECTS)) expect(QA_BANK.filter(q => q.subject === k).length, k).toBeGreaterThanOrEqual(12);
     for (const q of QA_BANK) {
       expect(ids.has(q.id), q.id).toBe(false); ids.add(q.id);
       expect(q.answer.length, q.id).toBeGreaterThanOrEqual(1);

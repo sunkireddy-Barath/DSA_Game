@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { QA_BANK, SUBJECTS } from '../interview/qa';
+import '../interview/qa2';
 import { useStore } from '../store';
 
 /** Interview game: answer the multiple-choice check, then see the model answer, the real-world use and the follow-ups. */
