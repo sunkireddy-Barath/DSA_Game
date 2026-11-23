@@ -34,6 +34,7 @@ function Dashboard() {
           <div className="hero-cta">
             {hero && <button className="primary" onClick={() => go(`/p/${hero.id}`)}>{hero.label}</button>}
             <button onClick={() => go('/dsa')}>Browse all {ALL_PROBLEMS.length} problems</button>
+            <button onClick={() => go('/games')}>🎮 Play a game</button>
             <button onClick={() => go('/interview')}>Interview practice</button>
           </div>
         </div>

@@ -1,0 +1,11 @@
+/* The top bar has many links: never let labels wrap, and collapse into the menu before it gets crowded. */
+nav.top a, nav.top .hud, nav.top .links a { white-space: nowrap; }
+.worldsel { max-width: 170px; }
+@media (max-width: 1400px) { .hud.lvl { display: none; } }
+@media (max-width: 1180px) {
+  nav.top { padding: 0 12px; gap: 6px; }
+  .menu-btn { display: grid; order: 5; }
+  .links { display: none; position: fixed; top: var(--nav-h); left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 2px; padding: 10px 12px 14px; background: var(--panel); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); max-height: calc(100vh - var(--nav-h)); overflow: auto; z-index: 20; }
+  .links.open { display: flex; animation: rise .18s ease both; }
+  nav.top .links a, .links .worldsel { padding: 11px 12px; font-size: 15px; max-width: none; width: 100%; }
+}

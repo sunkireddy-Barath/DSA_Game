@@ -1,0 +1,25 @@
+// node e2e/shots-games.mjs <outDir> [dark|light]  - screenshots of the games for design review (needs `vite preview` on 4173)
+import { chromium } from '@playwright/test';
+import { mkdirSync } from 'node:fs';
+const out = process.argv[2] ?? 'shots/games';
+const scheme = process.argv[3] ?? 'dark';
+mkdirSync(out, { recursive: true });
+const browser = await chromium.launch({ channel: 'msedge' });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, colorScheme: scheme });
+const page = await ctx.newPage();
+await page.addInitScript(() => { Math.random = () => 0.25; });
+const base = 'http://127.0.0.1:4173/#/games';
+await page.goto(base); await page.waitForTimeout(700); await page.screenshot({ path: `${out}/hub.png` });
+await page.goto(`${base}/bs`); await page.waitForTimeout(500); await page.screenshot({ path: `${out}/bs-intro.png` });
+await page.getByTestId('level-2').click();
+for (const i of [15, 7, 3]) await page.getByTestId(`bs-cell-${i}`).click({ timeout: 2000 }).catch(() => {});
+await page.waitForTimeout(500); await page.screenshot({ path: `${out}/bs-play.png` });
+await page.goto(`${base}/sg`); await page.getByTestId('level-2').click();
+await page.getByTestId('sg-push').click({ timeout: 2000 }).catch(() => {}); await page.getByTestId('sg-pop').click({ timeout: 2000 }).catch(() => {});
+await page.waitForTimeout(400); await page.screenshot({ path: `${out}/sg-play.png` });
+await page.goto(`${base}/pg`); await page.getByTestId('level-1').click(); await page.getByTestId('pg-fault').click(); await page.waitForTimeout(400); await page.screenshot({ path: `${out}/pg-play.png` });
+await page.goto(`${base}/bo`); await page.getByTestId('level-2').click(); await page.getByTestId('bo-O(n)').click(); await page.waitForTimeout(900); await page.screenshot({ path: `${out}/bo-play.png` });
+await page.goto(`${base}/tm`); await page.getByTestId('level-1').click(); await page.getByTestId('tm-card-0').click(); await page.getByTestId('tm-card-1').click(); await page.waitForTimeout(300); await page.screenshot({ path: `${out}/tm-play.png` });
+await page.goto(`${base}/sn`); await page.getByTestId('level-1').click(); await page.getByTestId('sn-opt-0').click(); await page.waitForTimeout(300); await page.screenshot({ path: `${out}/sn-play.png` });
+await browser.close();
+console.log('done');

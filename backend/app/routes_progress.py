@@ -22,6 +22,12 @@ class Solved(BaseModel):
     hints: int = Field(ge=0, le=1000)
 
 
+class GameStat(BaseModel):
+    stars: int = Field(ge=0, le=3)
+    best: int = Field(ge=0, le=1_000_000)
+    plays: int = Field(ge=0, le=1_000_000)
+
+
 class Activity(BaseModel):
     t: int = Field(ge=0)
     text: str = Field(max_length=200)
@@ -43,6 +49,7 @@ class ProgressData(BaseModel):
     attempts: dict[str, int] = {}
     drafts: dict[str, str] = {}
     qaDone: dict[str, bool] = {}
+    games: dict[str, GameStat] = {}
     predictions: Pair = Pair(correct=0, total=0)
     streak: Streak = Streak(last="", count=0)
     seconds: int = Field(default=0, ge=0, le=10_000_000_000)
@@ -70,6 +77,13 @@ class ProgressData(BaseModel):
             raise ValueError("too many answered questions")
         return v
 
+    @field_validator("games")
+    @classmethod
+    def _games(cls, v: dict) -> dict:
+        if len(v) > 200 or any(len(k) > KEY_LEN for k in v):
+            raise ValueError("too many games")
+        return v
+
     @field_validator("drafts")
     @classmethod
     def _drafts(cls, v: dict) -> dict:
@@ -95,6 +109,11 @@ def merge(server: dict[str, Any], client: dict[str, Any]) -> dict[str, Any]:
         att[k] = max(att.get(k, 0), n)
     out["attempts"] = att
     out["qaDone"] = {**server.get("qaDone", {}), **client.get("qaDone", {})}
+    games = dict(server.get("games", {}))
+    for k, g in client.get("games", {}).items():
+        o = games.get(k)
+        games[k] = g if o is None else {m: max(o[m], g[m]) for m in ("stars", "best", "plays")}
+    out["games"] = games
     sp, cp = server.get("predictions", {"correct": 0, "total": 0}), client.get("predictions", {"correct": 0, "total": 0})
     out["predictions"] = {"correct": max(sp["correct"], cp["correct"]), "total": max(sp["total"], cp["total"])}
     ss, cs = server.get("streak", {"last": "", "count": 0}), client.get("streak", {"last": "", "count": 0})

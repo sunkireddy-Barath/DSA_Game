@@ -15,6 +15,8 @@ interface State {
   streak: { last: string; count: number }; seconds: number; last: string | null; log: Activity[];
   qaDone: Record<string, boolean>;
   markQa(id: string, ok: boolean): boolean;
+  games: Record<string, { stars: number; best: number; plays: number }>;
+  finishGame(key: string, stars: number, score: number, title: string): number;
   addXp(n: number, text: string): void;
   touchStreak(): void;
   recordAttempt(id: string): void;
@@ -25,10 +27,18 @@ interface State {
   setLast(id: string): void;
   reset(): void;
 }
-const init = { qaDone: {} as Record<string, boolean>, xp: 0, solved: {}, attempts: {}, drafts: {}, predictions: { correct: 0, total: 0 }, streak: { last: '', count: 0 }, seconds: 0, last: null, log: [] as Activity[] };
+const init = { qaDone: {} as Record<string, boolean>, games: {} as Record<string, { stars: number; best: number; plays: number }>, xp: 0, solved: {}, attempts: {}, drafts: {}, predictions: { correct: 0, total: 0 }, streak: { last: '', count: 0 }, seconds: 0, last: null, log: [] as Activity[] };
 
 export const useStore = create<State>()(persist((set, get) => ({
   ...init,
+  finishGame: (key, stars, score, title) => {
+    const prev = get().games[key] ?? { stars: 0, best: 0, plays: 0 };
+    const gained = 8 * Math.max(0, stars - prev.stars);        // replays never farm XP: only a better star rating pays
+    set(s => ({ games: { ...s.games, [key]: { stars: Math.max(prev.stars, stars), best: Math.max(prev.best, score), plays: prev.plays + 1 } } }));
+    if (gained > 0) get().addXp(gained, `Game: ${title} (${'★'.repeat(stars)})`);
+    get().touchStreak();
+    return gained;
+  },
   markQa: (id, ok) => { if (!ok || get().qaDone[id]) return false; set(s => ({ qaDone: { ...s.qaDone, [id]: true } })); get().addXp(10, 'Interview question answered'); get().touchStreak(); return true; },
   addXp: (n, text) => set(s => ({ xp: s.xp + n, log: [{ t: Date.now(), text: `+${n} XP · ${text}` }, ...s.log].slice(0, 30) })),
   touchStreak: () => set(s => {

@@ -5,6 +5,7 @@ export interface Progress {
   attempts: Record<string, number>;
   drafts: Record<string, string>;
   qaDone: Record<string, boolean>;
+  games: Record<string, { stars: number; best: number; plays: number }>;
   predictions: { correct: number; total: number };
   streak: { last: string; count: number };
   seconds: number;
@@ -12,7 +13,7 @@ export interface Progress {
   log: { t: number; text: string }[];
 }
 
-export const SYNC_KEYS = ['xp', 'solved', 'attempts', 'drafts', 'qaDone', 'predictions', 'streak', 'seconds', 'last', 'log'] as const;
+export const SYNC_KEYS = ['xp', 'solved', 'attempts', 'drafts', 'qaDone', 'games', 'predictions', 'streak', 'seconds', 'last', 'log'] as const;
 const MAX_DRAFTS = 200, MAX_DRAFT_CHARS = 20000;
 
 export function mergeProgress(a: Progress, b: Progress): Progress {
@@ -20,11 +21,13 @@ export function mergeProgress(a: Progress, b: Progress): Progress {
   for (const [k, v] of Object.entries(b.solved)) if (!solved[k] || v.at < solved[k].at) solved[k] = v;
   const attempts = { ...a.attempts };
   for (const [k, n] of Object.entries(b.attempts)) attempts[k] = Math.max(attempts[k] ?? 0, n);
+  const games = { ...a.games };
+  for (const [k, g] of Object.entries(b.games ?? {})) { const o = games[k]; games[k] = o ? { stars: Math.max(o.stars, g.stars), best: Math.max(o.best, g.best), plays: Math.max(o.plays, g.plays) } : g; }
   const streak = `${b.streak.last}|${String(b.streak.count).padStart(6, '0')}` >= `${a.streak.last}|${String(a.streak.count).padStart(6, '0')}` ? b.streak : a.streak;
   const log = new Map<string, { t: number; text: string }>();
   for (const x of [...a.log, ...b.log]) log.set(`${x.t}|${x.text}`, x);
   return {
-    xp: Math.max(a.xp, b.xp), solved, attempts, qaDone: { ...a.qaDone, ...b.qaDone },
+    xp: Math.max(a.xp, b.xp), solved, attempts, qaDone: { ...a.qaDone, ...b.qaDone }, games,
     drafts: { ...a.drafts, ...b.drafts },
     predictions: { correct: Math.max(a.predictions.correct, b.predictions.correct), total: Math.max(a.predictions.total, b.predictions.total) },
     streak, seconds: Math.max(a.seconds, b.seconds), last: b.last ?? a.last,

@@ -22,6 +22,8 @@ const SoftwareEngWorld = page(() => import('./components/SoftwareEngWorld'), 'So
 const DevWorld = page(() => import('./components/DevWorld'), 'DevWorld');
 const InterviewGlossary = page(() => import('./components/InterviewGlossary'), 'InterviewGlossary');
 const Account = page(() => import('./components/Account'), 'Account');
+const GamesHub = page(() => import('./components/games/Games'), 'GamesHub');
+const GamePage = page(() => import('./components/games/Games'), 'GamePage');
 
 const useHash = () => {
   const [h, setH] = useState(location.hash.slice(1) || '/');
@@ -62,6 +64,7 @@ export default function App() {
           <select className="worldsel" value={['dbms', 'sql', 'os', 'oops', 'cn', 'coa', 'sysdesign', 'se', 'dev'].includes(route) ? route : ''} onChange={e => { if (e.target.value) go(`/${e.target.value}`); }} aria-label="Jump to a world">
             <option value="">Jump to a world…</option><option value="dbms">Database World</option><option value="sql">SQL World</option><option value="os">Operating System World</option><option value="oops">OOPS World</option><option value="cn">Network World</option><option value="coa">Computer Architecture World</option><option value="sysdesign">System Design World</option><option value="se">Software Engineering World</option><option value="dev">Developer Tools World</option>
           </select>
+          <a className={route === 'games' ? 'on' : ''} href="#/games">Games</a>
           <a className={route === 'interview' ? 'on' : ''} href="#/interview">Interview</a>
           <a className={route === 'playground' ? 'on' : ''} href="#/playground">Playground</a>
           <a className={route === 'profile' ? 'on' : ''} href="#/profile">Profile</a>
@@ -93,9 +96,10 @@ export default function App() {
             {route === 'se' && <SoftwareEngWorld />}
             {route === 'dev' && <DevWorld />}
             {route === 'interview' && <InterviewGlossary />}
+            {route === 'games' && (arg ? <GamePage id={arg} /> : <GamesHub />)}
             {route === 'account' && <Account />}
             {route === 'profile' && <Profile />}
-            {route && !['worlds', 'world', 'dsa', 'p', 'playground', 'sql', 'os', 'dbms', 'cn', 'coa', 'oops', 'sysdesign', 'se', 'dev', 'interview', 'account', 'profile'].includes(route) && <div className="page"><h1>Page not found</h1><p><a href="#/">Back to the dashboard</a></p></div>}
+            {route && !['worlds', 'world', 'dsa', 'p', 'playground', 'sql', 'os', 'dbms', 'cn', 'coa', 'oops', 'sysdesign', 'se', 'dev', 'interview', 'games', 'account', 'profile'].includes(route) && <div className="page"><h1>Page not found</h1><p><a href="#/">Back to the dashboard</a></p></div>}
           </Suspense>
         </Boundary>
       </main>

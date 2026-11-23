@@ -29,9 +29,9 @@ status is in [`docs/READINESS_REPORT.md`](docs/READINESS_REPORT.md).
 
 | Command | What it runs |
 |---|---|
-| `npm test` | 1,288 unit tests: interpreter vs independent JS references for every solution, all engines, SQL on real SQLite, client code, and a render test that draws the diagrams and inspector at sampled steps of every solution |
+| `npm test` | 1,312 unit tests (incl. all six game engines): interpreter vs independent JS references for every solution, all engines, SQL on real SQLite, client code, and a render test that draws the diagrams and inspector at sampled steps of every solution |
 | `npm run test:backend` | 100+ backend tests, including real Docker-sandbox runs (network, filesystem, fork bomb, memory bomb, timeouts) |
-| `npm run test:e2e` | 49 real-browser tests (Microsoft Edge via Playwright) against the production build, the real API and the real sandbox |
+| `npm run test:e2e` | 61 real-browser tests (Microsoft Edge via Playwright) against the production build, the real API and the real sandbox |
 | `npm run verify:native -- --ubsan` | compiles **every** solution with real g++ (+ UBSan) in the sandbox and compares with the reference answers |
 
 ## What is implemented
@@ -40,6 +40,9 @@ status is in [`docs/READINESS_REPORT.md`](docs/READINESS_REPORT.md).
   per topic, and a line-by-line tracer (statement/call/return events, frames, heap, recursion tree). Solutions are also checked on real g++.
 - **Diagrams that explain themselves** - every step has a plain-English narration (what the line is about to do, taken from the recorded next step), labelled pointers
   (`low`/`mid`/`high`, `slow`/`fast`, ...), a shaded active search range, and a legend plus "how to read this" note on every diagram in every world.
+- **Games** (`#/games`) - six short learning games, each driven by a tested engine (answers are computed, never hard-coded): Binary Search Hunter, Bracket Balancer
+  (be the stack), Page Fault Predictor (FIFO/LRU), Subnet Sniper, Big-O Match (answers confirmed by step counts measured on the real interpreter) and Term Match (memory
+  cards from the glossary). Three levels each, 1-3 stars, XP only for beating your best rating (no farming), progress synced to your account.
 - **Design** - light and dark themes (follows the system, with a toggle), self-hosted fonts and editor, responsive layout with a phone menu, keyboard focus rings.
 - **Real C++ execution** - function-style (LeetCode) code, no `main()` needed, C++17 or C++20, compiled by g++ 13 in an isolated container.
   The "g++ Run" tab runs your input or all tests natively and tells you whether the result matches the in-browser tracer.

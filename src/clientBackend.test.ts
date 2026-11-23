@@ -7,7 +7,7 @@ import { runCpp } from './engine/interp';
 import { PLAYABLE_BY_TITLE } from './data/problems';
 import { readFileSync } from 'node:fs';
 
-const empty = (): Progress => ({ xp: 0, solved: {}, attempts: {}, drafts: {}, qaDone: {}, predictions: { correct: 0, total: 0 }, streak: { last: '', count: 0 }, seconds: 0, last: null, log: [] });
+const empty = (): Progress => ({ xp: 0, solved: {}, attempts: {}, drafts: {}, qaDone: {}, games: {}, predictions: { correct: 0, total: 0 }, streak: { last: '', count: 0 }, seconds: 0, last: null, log: [] });
 const A: Progress = { ...empty(), xp: 100, solved: { 'two-sum': { at: 1000, attempts: 2, hints: 1 } }, attempts: { 'two-sum': 2 }, qaDone: { 'dsa-1': true }, predictions: { correct: 3, total: 5 }, streak: { last: '2025-01-02', count: 2 }, seconds: 60, log: [{ t: 10, text: 'a' }], drafts: { p1: 'int x;' } };
 const B: Progress = { ...empty(), xp: 80, solved: { 'two-sum': { at: 500, attempts: 4, hints: 0 }, lru: { at: 2000, attempts: 1, hints: 0 } }, attempts: { 'two-sum': 4, lru: 1 }, qaDone: { 'os-2': true }, predictions: { correct: 1, total: 9 }, streak: { last: '2025-01-05', count: 1 }, seconds: 10, log: [{ t: 20, text: 'b' }] };
 
@@ -32,7 +32,7 @@ describe('progress merge (must match backend/app/routes_progress.py)', () => {
   it('trims drafts that the server would reject and keeps only the synced keys', () => {
     const w = toWire({ ...A, drafts: { ok: 'x', big: 'y'.repeat(20001), ['k'.repeat(81)]: 'z' } });
     expect(Object.keys(w.drafts)).toEqual(['ok']);
-    expect(Object.keys(pick({ ...A, token: 'nope', foo: 1 })).sort()).toEqual(['attempts', 'drafts', 'last', 'log', 'predictions', 'qaDone', 'seconds', 'solved', 'streak', 'xp']);
+    expect(Object.keys(pick({ ...A, token: 'nope', foo: 1 })).sort()).toEqual(['attempts', 'drafts', 'games', 'last', 'log', 'predictions', 'qaDone', 'seconds', 'solved', 'streak', 'xp']);
   });
 });
 

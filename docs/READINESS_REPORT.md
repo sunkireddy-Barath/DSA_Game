@@ -42,7 +42,7 @@ deployment before relying on it. Everything here was verified on a single Window
 - **Mock interviewer** is keyword matching, not an LLM; explanations/glossary prose is hand-written and not machine-verified.
 - Nothing is committed by this work; review `git status` first.
 
-## 4. What the browser tests cover (49 tests, all passing)
+## 4. What the browser tests cover (61 tests, all passing)
 
 Shell/routing/lazy loading and CSP (6) - Interview Q&A, mock interviewer, glossary (4) - SQL: load under CSP, run, stages, EXPLAIN, errors with hints,
 DML + reset, challenge pass/fail/XP/hints, lessons (6) - DSA: stepping, play/pause, approaches, predict mode, inspector, solve mode with hints/peek/XP/persistence,
@@ -74,9 +74,18 @@ AI tutor: context actually sent upstream, history, upstream failure handling, lo
 | Suite | Result |
 |---|---|
 | `tsc --noEmit` | clean |
-| `npm test` (vitest) | **1,288 passed**, 4 skipped (opt-in verification modes) |
-| `npm run test:backend` (pytest, incl. real Docker sandbox) | **103 passed** |
-| `npm run test:e2e` (Playwright, Edge, production build) | **49 passed** |
+| `npm test` (vitest) | **1,312 passed**, 4 skipped (opt-in verification modes) |
+| `npm run test:backend` (pytest, incl. real Docker sandbox) | **105 passed** |
+| `npm run test:e2e` (Playwright, Edge, production build) | **61 passed** |
+
+### Games (this round)
+
+Six learning games (`#/games`): Binary Search Hunter, Bracket Balancer, Page Fault Predictor, Subnet Sniper, Big-O Match, Term Match. Every rule lives in a pure,
+unit-tested engine; answers are computed, not hard-coded (page faults checked against an independent FIFO/LRU simulation, subnet answers against bit-level
+arithmetic, Big-O labels against statement counts measured on the real interpreter). Each game has 3 levels and 1-3 stars; XP is paid only for beating your best
+rating, and stats sync to the account (validated and max-merged by the backend). Found and fixed while testing: switching directly between games reused the previous
+game's level; a card class collided with the Developer World terminal style (`height: 380px`); the top bar wrapped labels once the Games link was added.
+Not verified: games were played by scripted tests and reviewed from Edge screenshots only; there is no sound, and keyboard-only play and screen readers were not tested.
 | `npm run verify:native -- --ubsan` (every solution on real g++ 13 + UBSan) | **2,530 / 2,530 checkable runs match the reference**; 10 runs skipped (6 problems, tracer-only inputs); 0 compile errors |
 | `npm run build` | succeeds |
 
